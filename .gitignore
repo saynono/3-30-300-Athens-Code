@@ -1,0 +1,11 @@
+spatial_data/
+.ipynb_checkpoints/
+cache/
+__pycache__/
+data/
+scratchpad.ipynb
+.env
+pymeanshift-master*
+.DS_Store
+**/keys.txt
+venv/
