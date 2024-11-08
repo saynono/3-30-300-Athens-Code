@@ -1,6 +1,6 @@
 # The following film has been modified from its original version. It has been formatted to fit this screen.
 
-# This program is used in the first step of the Treepedia project to get points along street 
+# This program is used in the first step of the src project to get points along street
 # network to feed into GSV python scripts for metadata generation.
 # Copyright(C) Ian Seiferling, Xiaojiang Li, Marwa Abdulhai, Senseable City Lab, MIT 
 # First version July 21 2017

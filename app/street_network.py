@@ -71,7 +71,7 @@ def download_shapefile(gdf, community_name):
 
         # Save to shapefile
         # OSMNX has marked this method and deprecated to move people away from
-        # shapefiles, but shapefiles are what the Treepedia project accepts as
+        # shapefiles, but shapefiles are what the src project accepts as
         # inputs, so we go with it.
         ox.save_graph_shapefile(graph, shapefile_dir)
 

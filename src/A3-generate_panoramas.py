@@ -183,7 +183,7 @@ def loadGSVImage(imgCachePath, URL):
 
 # using 18 directions is too time consuming, therefore, here I only use 6 horizontal directions
 # Each time the function will read a text, with 1000 records, and save the result as a single TXT
-def GreenViewComputing_ogr_6Horizon(GSVinfoFolder, outTXTRoot, greenmonth, GSVcacheFolder, GSVpanoramaFolder,keylist):
+def PanoramaStitching_ogr_6Horizon(GSVinfoFolder, greenmonth, GSVcacheFolder, GSVpanoramaFolder,keylist):
 
 
     """
@@ -207,10 +207,6 @@ def GreenViewComputing_ogr_6Horizon(GSVinfoFolder, outTXTRoot, greenmonth, GSVca
     # number of GSV images for Green View calculation, in my original Green View View paper, I used 18 images, in this case, 6 images at different horizontal directions should be good.
     numGSVImg = len(headingArr)*1.0
     pitch = 0
-    
-    # create a folder for GSV images and grenView Info
-    if not os.path.exists(outTXTRoot):
-        os.makedirs(outTXTRoot)
     
     # the input GSV info should be in a folder
     if not os.path.isdir(GSVinfoFolder):
@@ -272,82 +268,80 @@ def GreenViewComputing_ogr_6Horizon(GSVinfoFolder, outTXTRoot, greenmonth, GSVca
             # the output text file to store the green view and pano info
             # gvTxt = 'GV_'+os.path.basename(txtfile)
             gvTxt = os.path.basename(txtfile)
-            GreenViewTxtFile = os.path.join(outTXTRoot,gvTxt)
-            
-            
+
             # check whether the file already generated, if yes, skip. Therefore, you can run several process at same time using this code.
-            print(GreenViewTxtFile)
             #TODO: removed this for now because it is annoying
             # if os.path.exists(GreenViewTxtFile):
             #     continue
             
             # write the green view and pano info to txt            
-            with open(GreenViewTxtFile,"w") as gvResTxt:
-                cntSpots = len(panoIDLst)
-                for i in range(cntSpots):
-                    panoDate = panoDateLst[i]
-                    panoID = panoIDLst[i]
-                    lat = panoLatLst[i]
-                    lon = panoLonLst[i]
-                    
-                    # get a different key from the key list each time
-                    idx = i % len(keylist)
-                    key = keylist[idx]
-                    
-                    # calculate the green view index
-                    greenPercent = 0.0
+            # with open(GreenViewTxtFile,"w") as gvResTxt:
 
-                    cntPerSpot = 0
+            cntSpots = len(panoIDLst)
+            for i in range(cntSpots):
+                panoDate = panoDateLst[i]
+                panoID = panoIDLst[i]
+                lat = panoLatLst[i]
+                lon = panoLonLst[i]
 
-                    panoramaCachePath = f"img_{panoID}_panorama.jpg"
-                    panoramaCachePath = os.path.join(GSVpanoramaFolder,panoramaCachePath)
-                    createPanorama = not os.path.exists(panoramaCachePath)
-                    if(createPanorama):
-                        panorama = Image.new('RGB', (2400, 400))
-                        panoramaCntDownloaded += 1
-                    x_offset = 0
+                # get a different key from the key list each time
+                idx = i % len(keylist)
+                key = keylist[idx]
 
-                    for heading in headingArr:
-                        # print(round(100*(i/cntSpots),2), "%  ", cntPerSpot, "/", headingArr.size, "Heading is: ", heading)
-                        cntPerSpot += 1
+                # calculate the green view index
+                greenPercent = 0.0
 
-                        # classify the GSV images and calcuate the GVI
-                        try:
+                cntPerSpot = 0
 
-                            # using different keys for different process, each key can only request 25,000 imgs every 24 hours
-                            URL = "http://maps.googleapis.com/maps/api/streetview?size=400x400&pano=%s&fov=60&heading=%d&pitch=%d&sensor=false&key=AIzaSyDqAHRrEPkCKZdGX0owZtbzCdATlgqbkmE"%(panoID,heading,pitch)
-                            imgCachePath = f"img_{panoID}_{heading}_{pitch}.jpg"
-                            imgCachePath = os.path.join(GSVcacheFolder,imgCachePath)
-                            img = loadGSVImage(imgCachePath, URL)
-                            if createPanorama:
-                                panorama.paste(img, (x_offset, 0))
-                                x_offset += img.size[0]
+                panoramaCachePath = f"img_{panoID}_panorama.jpg"
+                panoramaCachePath = os.path.join(GSVpanoramaFolder,panoramaCachePath)
+                createPanorama = not os.path.exists(panoramaCachePath)
+                if(createPanorama):
+                    panorama = Image.new('RGB', (2400, 400))
+                    panoramaCntDownloaded += 1
+                x_offset = 0
 
-                            # temporarily switching this off
-                            # im = np.array(img)
-                            # percent = VegetationClassification(im)
-                            # greenPercent = greenPercent + percent
-                        # if the GSV images are not download successfully or failed to run, then return a null value
-                        except Exception as e:
-                            print(f"Error type: {type(e).__name__}")
-                            print(f"Error message: {str(e)}")
-                            greenPercent = -1000
-                            break
+                for heading in headingArr:
+                    # print(round(100*(i/cntSpots),2), "%  ", cntPerSpot, "/", headingArr.size, "Heading is: ", heading)
+                    cntPerSpot += 1
 
-                    # calculate the green view index by averaging six percents from six images
-                    greenViewVal = greenPercent/numGSVImg
-                    # print('The greenview: %s, pano: %s, (%s, %s)'%(greenViewVal, panoID, lat, lon))
+                    # classify the GSV images and calcuate the GVI
+                    try:
 
-                    if createPanorama:
-                        panorama.save(panoramaCachePath)
+                        # using different keys for different process, each key can only request 25,000 imgs every 24 hours
+                        URL = "http://maps.googleapis.com/maps/api/streetview?size=400x400&pano=%s&fov=60&heading=%d&pitch=%d&sensor=false&key=AIzaSyDqAHRrEPkCKZdGX0owZtbzCdATlgqbkmE"%(panoID,heading,pitch)
+                        imgCachePath = f"img_{panoID}_{heading}_{pitch}.jpg"
+                        imgCachePath = os.path.join(GSVcacheFolder,imgCachePath)
+                        img = loadGSVImage(imgCachePath, URL)
+                        if createPanorama:
+                            panorama.paste(img, (x_offset, 0))
+                            x_offset += img.size[0]
 
-                    panoramaCntProcessed += 1
+                        # temporarily switching this off
+                        # im = np.array(img)
+                        # percent = VegetationClassification(im)
+                        # greenPercent = greenPercent + percent
+                    # if the GSV images are not download successfully or failed to run, then return a null value
+                    except Exception as e:
+                        print(f"Error type: {type(e).__name__}")
+                        print(f"Error message: {str(e)}")
+                        greenPercent = -1000
+                        break
 
-                    print(round(100*(panoramaCntProcessed/panoramaCntTotal),2), "%  [", panoramaCntDownloaded, " set downloads] ", "\tPanorama-file: ", panoramaCachePath)
+                # calculate the green view index by averaging six percents from six images
+                greenViewVal = greenPercent/numGSVImg
+                # print('The greenview: %s, pano: %s, (%s, %s)'%(greenViewVal, panoID, lat, lon))
 
-                    # write the result and the pano info to the result txt file
-                    lineTxt = 'panoID: %s panoDate: %s longitude: %s latitude: %s, greenview: %s\n'%(panoID, panoDate, lon, lat, greenViewVal)
-                    gvResTxt.write(lineTxt)
+                if createPanorama:
+                    panorama.save(panoramaCachePath)
+
+                panoramaCntProcessed += 1
+
+                print(round(100*(panoramaCntProcessed/panoramaCntTotal),2), "%  [", panoramaCntDownloaded, " set downloads] ", "\tPanorama-file: ", panoramaCachePath)
+
+                # write the result and the pano info to the result txt file
+                # lineTxt = 'panoID: %s panoDate: %s longitude: %s latitude: %s, greenview: %s\n'%(panoID, panoDate, lon, lat, greenViewVal)
+                # gvResTxt.write(lineTxt)
 
 
 
@@ -360,7 +354,7 @@ def GreenViewComputing_ogr_6Horizon(GSVinfoFolder, outTXTRoot, greenmonth, GSVca
 #     outputTextPath = GVI_DIR / format_folder_name(area_number)
 #     # greenmonth = ['01','02','03','04','05','06','07','08','09','10','11','12']
 #     greenmonth = ['05','06','07','08','09']
-#     # key_file = 'MYPATH/Treepedia/Treepedia/keys.txt'
+#     # key_file = 'MYPATH/src/src/keys.txt'
 #
 #     GreenViewComputing_ogr_6Horizon(GSVinfoRoot, outputTextPath, greenmonth)
 #
@@ -382,14 +376,17 @@ if __name__ == "__main__":
     import os,os.path
     import itertools
 
-    root = '/Users/nono/Documents/workspaces/GIS/3-30-300-Athens-data/'
+    root = os.path.abspath('../3-30-300-Athens-Data/')
 
-    GSVcache = os.path.join(root, './spatial-data/panodata-cache')
-    GSVpanoramaFolder = os.path.join(root, './spatial-data/panoramas-final')
+    GSVcache = os.path.join(root, './GSV-Data/panodata-cache')
+    GSVpanoramaFolder = os.path.join(root, './GSV-Data/panoramas-final')
     GSVinfoRoot = os.path.join(root, 'maps/Kypseli-All/metadata/')
-    outputTextPath = os.path.join(root, './spatial-data/Kypseli-Center/greenViewRes')
+    # outputTextPath = os.path.join(root, './spatial-data/Kypseli-Center/greenViewRes')
     greenmonth = ['01','02','03','04','05','06','07','08','09','10','11','12']
     # greenmonth = ['04','05','06','07','08','09','10','11']
+
+
+    # print(f"GreenViewTxtFile: {outputTextPath}")
 
 
 
@@ -400,6 +397,6 @@ if __name__ == "__main__":
     key_file = './keys.txt'
     keylist = utils.get_keys(key_file)
 
-    GreenViewComputing_ogr_6Horizon(GSVinfoRoot,outputTextPath, greenmonth, GSVcache, GSVpanoramaFolder,keylist)
+    PanoramaStitching_ogr_6Horizon(GSVinfoRoot, greenmonth, GSVcache, GSVpanoramaFolder,keylist)
 
     # GreenViewComputing_ogr_6Horizon(GSVinfoRoot,outputTextPath, greenmonth, key_file)

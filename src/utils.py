@@ -237,7 +237,7 @@ def get_entry_points_to_park (graph, gdf_park):
     # Request geometries with the specified tags
     gdf_park = gdf_park.to_crs(epsg=4326)
     park_boundary = gdf_park.unary_union
-    gdf_entries = ox.geometries_from_polygon(park_boundary, tags=tags)
+    gdf_entries = ox.features_from_polygon(park_boundary, tags=tags)
 
     print(f"gdf_entries: {type(gdf_entries)}")
     print(f"gdf_park: {type(gdf_park)}")

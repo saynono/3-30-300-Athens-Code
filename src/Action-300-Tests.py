@@ -1,7 +1,4 @@
 
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-
 import matplotlib.pyplot as plt
 
 import geopandas as gpd
@@ -31,7 +28,13 @@ if __name__ == "__main__":
     # in meters
     max_distance = 300
 
-    root = '/Users/nono/Documents/workspaces/GIS/3-30-300-Athens-data/maps/Kypseli-All/'
+    root = '../3-30-300-Athens-Data/maps/Kypseli-All/'
+
+    project_path = os.path.dirname(os.path.abspath(__file__))
+    print("Project Path:", project_path)
+    print("Root Path:", os.path.abspath(root))
+    root = os.path.abspath(root)
+
     shape_file = "Kypseli-All.shp"
 
     root_generated = os.path.join(root, "generated/")
@@ -46,6 +49,7 @@ if __name__ == "__main__":
 
     inputShp = os.path.join(root, shape_file)
     outputGraphWalking = os.path.join(root_generated, graph_file)
+    print(f"File {inputShp}")
 
     gdf_in = gpd.read_file(inputShp)
 
