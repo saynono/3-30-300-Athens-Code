@@ -5,7 +5,7 @@ from PIL import Image
 import math
 import cv2
 import skimage as ski
-
+from numpy.random import randint
 
 # from /home/nono/Documents/workspaces/ai/Depth-Anything-V2/metric_depth/depth_anything_v2.dpt import DepthAnythingV2
 # Load your image and depth map
@@ -52,7 +52,7 @@ def depth_to_point_cloud(depth_map, image, focal_length_x, focal_length_y ):
         for x in range(width):
             # Get depth value
             z = depth_map[y, x]
-            if z > 0:  # Ignore invalid depths
+            if z > 0 or True:  # Ignore invalid depths
 
                 # # Calculate angles in spherical coordinates
                 # theta = (y / height) * math.radians(60) - math.radians(30)  # Vertical angle (±30 degrees from center)
@@ -67,19 +67,27 @@ def depth_to_point_cloud(depth_map, image, focal_length_x, focal_length_y ):
                 X = (x - width / 2) / focal_length_x
                 Y = (y - height / 2) / focal_length_y
 
-                points.append([X,Y,z])
+                if(randint(1000)>900):
+                    print(f"[{x},{y}] : z=>{z}")
 
+                points.append([X*z,Y*z,z])
+            else:
+                print(f"Z not okay")
     return np.array(points)
 
 # Convert the depth map and image to a point cloud
 points = depth_to_point_cloud(depth_map, image, focal_x_length, focal_y_length )
+
+color_image = Image.open(pathImage).convert('RGB')
+colors = np.array(color_image).reshape(-1, 3) / 255.0
+
 
 # Generate mesh grid and calculate point cloud coordinates
 x, y = np.meshgrid(np.arange(width), np.arange(height))
 x = (x - width / 2) / focal_x_length
 y = (y - height / 2) / focal_y_length
 z = np.array(depth_map)
-points = np.stack((np.multiply(x, z), np.multiply(y, z), z), axis=-1).reshape(-1, 3)
+# points = np.stack((np.multiply(x, z), np.multiply(y, z), z), axis=-1).reshape(-1, 3)
 
 # Save the point cloud
 import open3d as o3d
@@ -93,14 +101,15 @@ def save_point_cloud(points, colors, filename="/home/nono/Documents/workspaces/G
 
 
 
-color_image = Image.open(pathImage).convert('RGB')
-colors = np.array(color_image).reshape(-1, 3) / 255.0
 
-save_point_cloud(points, colors)
+# save_point_cloud(points, colors)
 
 
 # colors = np.random.rand(len(points), 3)
 
+print(f"Legnth points: {len(o3d.utility.Vector3dVector(points))}")
+print(f"Legnth colors: {len(o3d.utility.Vector3dVector(colors))}")
+points *= 80.0
 
 # Create an Open3D PointCloud object
 point_cloud = o3d.geometry.PointCloud()
@@ -112,9 +121,10 @@ point_cloud.colors = o3d.utility.Vector3dVector(colors)
 
 
 # Visualize the point cloud
-# o3d.visualization.draw_geometries([point_cloud])
-o3d.visualization.draw(point_cloud)
+o3d.visualization.draw_geometries([point_cloud])
+# o3d.visualization.draw(point_cloud)
 #
 #
 # ski.io.imshow(np.array(depth_image))
 # ski.io.show()
+

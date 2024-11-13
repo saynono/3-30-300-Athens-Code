@@ -26,6 +26,13 @@ from dotenv import load_dotenv
 import re
 import utils
 
+from basicsr.archs.rrdbnet_arch import RRDBNet
+from basicsr.utils.download_util import load_file_from_url
+
+from realesrgan import RealESRGANer
+from realesrgan.archs.srvgg_arch import SRVGGNetCompact
+
+
 from directories import PANO_DIR, GVI_DIR, format_folder_name
 
 load_dotenv()
@@ -202,8 +209,13 @@ def PanoramaStitching_ogr_6Horizon(GSVinfoFolder, greenmonth, GSVcacheFolder, GS
     """    
 
     # set a series of heading angle
-    headingArr = 360/6*np.array([0,1,2,3,4,5])
-    
+    photos_per_panorama = 6
+    fov = 360/photos_per_panorama
+    gsv_width = round(400.0/60.0*fov)*2
+    gsv_width_total = photos_per_panorama*gsv_width
+    # np.arange(0, 10, 1)
+    headingArr = 360/photos_per_panorama*np.arange(0,photos_per_panorama,1)
+    pixel_step = photos_per_panorama
     # number of GSV images for Green View calculation, in my original Green View View paper, I used 18 images, in this case, 6 images at different horizontal directions should be good.
     numGSVImg = len(headingArr)*1.0
     pitch = 0
@@ -293,11 +305,13 @@ def PanoramaStitching_ogr_6Horizon(GSVinfoFolder, greenmonth, GSVcacheFolder, GS
 
                 cntPerSpot = 0
 
-                panoramaCachePath = f"img_{panoID}_panorama.jpg"
+                panoramaCachePath = f"__img_{panoID}_panorama.jpg"
                 panoramaCachePath = os.path.join(GSVpanoramaFolder,panoramaCachePath)
                 createPanorama = not os.path.exists(panoramaCachePath)
                 if(createPanorama):
-                    panorama = Image.new('RGB', (2400, 400))
+                     # = photos_per_panorama*
+                    panorama = Image.new('RGB', (gsv_width_total, 400))
+                    # panorama = Image.new('RGB', (2400, 400))
                     panoramaCntDownloaded += 1
                 x_offset = 0
 
@@ -309,8 +323,8 @@ def PanoramaStitching_ogr_6Horizon(GSVinfoFolder, greenmonth, GSVcacheFolder, GS
                     try:
 
                         # using different keys for different process, each key can only request 25,000 imgs every 24 hours
-                        URL = "http://maps.googleapis.com/maps/api/streetview?size=400x400&pano=%s&fov=60&heading=%d&pitch=%d&sensor=false&key=AIzaSyDqAHRrEPkCKZdGX0owZtbzCdATlgqbkmE"%(panoID,heading,pitch)
-                        imgCachePath = f"img_{panoID}_{heading}_{pitch}.jpg"
+                        URL = f"http://maps.googleapis.com/maps/api/streetview?size={gsv_width}x400&pano=%s&fov={fov}&heading=%d&pitch=%d&sensor=false&key=AIzaSyDqAHRrEPkCKZdGX0owZtbzCdATlgqbkmE"%(panoID,heading,pitch)
+                        imgCachePath = f"__img_{panoID}_{heading}_{pitch}.jpg"
                         imgCachePath = os.path.join(GSVcacheFolder,imgCachePath)
                         img = loadGSVImage(imgCachePath, URL)
                         if createPanorama:
@@ -379,11 +393,16 @@ if __name__ == "__main__":
     root = os.path.abspath('../3-30-300-Athens-Data/')
 
     GSVcache = os.path.join(root, './GSV-Data/panodata-cache')
-    GSVpanoramaFolder = os.path.join(root, './GSV-Data/panoramas-final')
+    GSVpanoramaFolder = os.path.join(root, './GSV-Data/panoramas-final-new')
     GSVinfoRoot = os.path.join(root, 'maps/Kypseli-All/metadata/')
     # outputTextPath = os.path.join(root, './spatial-data/Kypseli-Center/greenViewRes')
     greenmonth = ['01','02','03','04','05','06','07','08','09','10','11','12']
     # greenmonth = ['04','05','06','07','08','09','10','11']
+
+    if not os.path.exists(GSVcache):
+        os.makedirs(GSVcache)
+    if not os.path.exists(GSVpanoramaFolder):
+        os.makedirs(GSVpanoramaFolder)
 
 
     # print(f"GreenViewTxtFile: {outputTextPath}")

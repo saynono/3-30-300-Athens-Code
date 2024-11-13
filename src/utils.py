@@ -1,7 +1,7 @@
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
-with warnings.catch_warnings():
-    warnings.simplefilter(action='ignore', category=FutureWarning)
+# import warnings
+# warnings.simplefilter(action='ignore', category=FutureWarning)
+# with warnings.catch_warnings():
+#     warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import requests
 from OSMPythonTools.nominatim import Nominatim
@@ -12,7 +12,10 @@ import osmnx.routing
 import networkx as nx
 from pyproj import CRS
 import geopandas as gpd
-
+import numpy as np
+import cv2
+import os
+import pandas as pd
 
 
 def get_keys(key_file):
@@ -264,3 +267,80 @@ def get_entry_points_to_park (graph, gdf_park):
     # return crossing_paths
     return gdf_entries_near_park
 
+
+def map_value(x, in_min, in_max, out_min, out_max):
+    # Map x from the input range to the output range
+    return out_min + (float(x - in_min) / float(in_max - in_min)) * (out_max - out_min)
+
+def cylindricalWarp(img, K):
+    """This function returns the cylindrical warp for a given image and intrinsics matrix K"""
+    h_,w_ = img.shape[:2]
+    # pixel coordinates
+    y_i, x_i = np.indices((h_,w_))
+    X = np.stack([x_i,y_i,np.ones_like(x_i)],axis=-1).reshape(h_*w_,3) # to homog
+    Kinv = np.linalg.inv(K)
+    X = Kinv.dot(X.T).T # normalized coords
+    # calculate cylindrical coords (sin\theta, h, cos\theta)
+    A = np.stack([np.sin(X[:,0]),X[:,1],np.cos(X[:,0])],axis=-1).reshape(w_*h_,3)
+    B = K.dot(A.T).T # project back to image-pixels plane
+    # back from homog coords
+    B = B[:,:-1] / B[:,[-1]]
+    # make sure warp coords only within image bounds
+    B[(B[:,0] < 0) | (B[:,0] >= w_) | (B[:,1] < 0) | (B[:,1] >= h_)] = -1
+    B = B.reshape(h_,w_,-1)
+
+    img_rgba = cv2.cvtColor(img,cv2.COLOR_BGR2BGRA) # for transparent borders...
+    # warp the image according to cylindrical coords
+    # return cv2.remap(img_rgba, B[:,:,0].astype(np.float32), B[:,:,1].astype(np.float32), cv2.INTER_AREA, borderMode=cv2.BORDER_TRANSPARENT)
+    return cv2.remap(img_rgba, B[:,:,0].astype(np.float32), B[:,:,1].astype(np.float32), cv2.INTER_AREA, borderValue=(0,0,0,0), borderMode=cv2.BORDER_CONSTANT)
+
+
+
+def load_all_csvs(folder_path):
+
+# panoID: _jSCThQlRmRgi5Z59xOOkw panoDate: 2022-10 longitude: 23.73276682879132 latitude: 37.99744412108172
+
+    custom_headers = ["h1", "panoID", "h2", "panoDate", "h3", "longitude", "h4", "latitude"]  # Replace with actual column names
+    # Load each CSV file and add it to the list
+    if os.path.isdir(folder_path):
+        dataframes_list = []
+        for filename in os.listdir(folder_path):
+            if filename.endswith(".txt"):
+                file_path = os.path.join(folder_path, filename)
+                df = pd.read_csv(file_path, header=None, sep=" ")
+                dataframes_list.append(df)
+        combined_df = pd.concat(dataframes_list, ignore_index=True)  # if using dictionary
+
+    elif os.path.isfile(folder_path):
+        combined_df = pd.read_csv(folder_path, header=None, sep=" ")
+
+    else:
+        print(f"No metadata could be loaded from {folder_path}")
+        return None
+
+    combined_df = combined_df.drop_duplicates()
+    # print_df_results(duplicates,"Duplicates")
+    combined_df.columns = custom_headers
+    reduced_df = combined_df.iloc[:, 1::2]
+    num_entries = reduced_df.shape[0]
+    print(f"There are {num_entries} entries in the metadata files.\n      {reduced_df.head()}")
+    return reduced_df
+
+
+def find_entry_by_panoID(df, panoID):
+    target_column = "panoID"
+    # Filter the DataFrame for rows where the target column contains the target value
+    matching_rows = df[df[target_column] == panoID]
+    return matching_rows
+
+def print_df_results(res, head="Results:"):
+    if res.empty:
+        print("No matching entries found.")
+    else:
+        print(head)
+        for index, row in res.iterrows():
+            # Select every other column (alternating columns)
+            # selected_columns = row.iloc[1::2]  # `::2` slices the row to pick every other column
+            # Format and print the row as a single line
+            str = f"Row {index} =>   " + ", ".join([f"{col}: {val}" for col, val in row.items()])
+            print(str)
