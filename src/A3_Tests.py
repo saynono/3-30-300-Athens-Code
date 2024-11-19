@@ -55,7 +55,7 @@ clicked_point = None
 clicked_point_prev = None
 segmented_mask = None
 stacked_images = None
-
+has_predictions = False
 
 def is_pixel_within_threshold(pixel, pixel_org, threshold):
 
@@ -254,8 +254,7 @@ def add_text(image, text, position):
 
 def draw_points(image, points):
     for p in points:
-        str = f"[{p[0]},{p[1]}] raw distance: {p[2]:.0f}cm"
-        print(str)
+        str = f"[{p[0]},{p[1]}] d: {p[2]:.0f}cm"
         cv2.circle(image, (p[0], p[1]), radius=5, color=(255, 0, 0), thickness=-1)
         add_text(image, str,(p[0]+20, p[1]))
 
@@ -330,6 +329,9 @@ def redraw():
         # cv2.addText(display_image, str,(clicked_point[1]+20, clicked_point[0]), "OpenSans", 10, color=(255, 0, 0) )
         draw_points(display_image, selected_points)
 
+        str = f"Panorama [{pano_id}]     Predictions: {has_predictions}"
+        add_text(display_image, str,(10, 20))
+
         stacked_images[height:2*height, 0:width] = display_image
 
 
@@ -391,57 +393,57 @@ def redraw():
 
         stacked_images[0:height, 0:] = display_image
 
-
-
-def create_gsv_map(metadata_df):
-
-    gdf = gpd.GeoDataFrame(
-        metadata_df,
-        geometry=[Point(xy) for xy in zip(metadata_df['longitude'], metadata_df['latitude'])],
-        crs="EPSG:4326"  # Use WGS84 (latitude/longitude) CRS
-    )
-
-    return gdf
-
-
-def temp_create_gsv_map(metadata_df):
-    gdf = gpd.GeoDataFrame(
-        metadata_df,
-        geometry=[Point(xy) for xy in zip(metadata_df['longitude'], metadata_df['latitude'])],
-        crs="EPSG:4326"  # Use WGS84 (latitude/longitude) CRS
-    )
-
-    random_points = []
-    for idx, row in gdf.iterrows():
-        # Generate random angle (0 to 360 degrees) and distance (e.g., 0 to 100 meters)
-        angle = 90 #random.uniform(0, 360)  # Angle in degrees
-        distance = random.uniform(1.5, 5.0)  # Distance in meters
-
-        # Calculate the new point based on the angle and distance
-        origin = (row['latitude'], row['longitude'])
-        destination = geopy_distance(meters=distance).destination(origin, angle)
-        new_point = Point(destination.longitude, destination.latitude)
-
-        # Add the new point to the list
-        random_points.append(new_point)
-
-    # Step 3: Add the new points as a new column in the GeoDataFrame
-
-    gdf_random = gpd.GeoDataFrame(
-        metadata_df[['panoID']],  # Keep only panoID or other identifiers
-        geometry=random_points,
-        crs="EPSG:4326"
-    )
-
-    return gdf_random
+#
+#
+# def create_gsv_map(metadata_df):
+#
+#     gdf = gpd.GeoDataFrame(
+#         metadata_df,
+#         geometry=[Point(xy) for xy in zip(metadata_df['longitude'], metadata_df['latitude'])],
+#         crs="EPSG:4326"  # Use WGS84 (latitude/longitude) CRS
+#     )
+#
+#     return gdf
+#
+#
+# def temp_create_gsv_map(metadata_df):
+#     gdf = gpd.GeoDataFrame(
+#         metadata_df,
+#         geometry=[Point(xy) for xy in zip(metadata_df['longitude'], metadata_df['latitude'])],
+#         crs="EPSG:4326"  # Use WGS84 (latitude/longitude) CRS
+#     )
+#
+#     random_points = []
+#     for idx, row in gdf.iterrows():
+#         # Generate random angle (0 to 360 degrees) and distance (e.g., 0 to 100 meters)
+#         angle = 90 #random.uniform(0, 360)  # Angle in degrees
+#         distance = random.uniform(1.5, 5.0)  # Distance in meters
+#
+#         # Calculate the new point based on the angle and distance
+#         origin = (row['latitude'], row['longitude'])
+#         destination = geopy_distance(meters=distance).destination(origin, angle)
+#         new_point = Point(destination.longitude, destination.latitude)
+#
+#         # Add the new point to the list
+#         random_points.append(new_point)
+#
+#     # Step 3: Add the new points as a new column in the GeoDataFrame
+#
+#     gdf_random = gpd.GeoDataFrame(
+#         metadata_df[['panoID']],  # Keep only panoID or other identifiers
+#         geometry=random_points,
+#         crs="EPSG:4326"
+#     )
+#
+#     return gdf_random
 
 
 def load_panorama(pano_id):
-    global regular_image, depth_image, depth_data, stitched_image, display_image, stacked_images
+    global regular_image, depth_image, depth_data, stitched_image, display_image, stacked_images, has_predictions
 
     regular_image, depth_image, depth_data = load_image_set(pano_id)
 
-    load_prediction(pano_id)
+    has_predictions = load_prediction(pano_id)
 
     if len(depth_image.shape) == 3:
         depth_image = cv2.cvtColor(depth_image, cv2.COLOR_BGR2GRAY)
@@ -490,7 +492,7 @@ def has_all_data(pano_id):
 
 def save_prediction(pano_id):
     global selected_points, gsvDataPrediction
-    print(f"Saving yes. {pano_id}")
+    print(f"Saving Predictions [{pano_id}]")
     path = os.path.join(gsvDataPrediction,f"predicted_{pano_id}.csv")
     with open(path, 'w', newline='') as file:
         str = f"x, y, depth, type\n"
@@ -509,10 +511,10 @@ def load_prediction(pano_id):
         df = pd.read_csv(path, sep=",")
         selected_points = []
         for index, item in df.iterrows():
-            print(f" ==========> item: {item}")
             values = item.values
             selected_points.append((int(values[0]),int(values[1]),values[2]))
-        print(f"selected_points: {selected_points}")
+        return True
+    return False
 
 
 def select_previous_panorama(unpredicted):
@@ -610,44 +612,28 @@ if __name__ == "__main__":
     # res = utils.find_entry_by_panoID(metadata_df,"0A1aUxQvyr_KqmaokVoqvQ")
     # utils.print_df_results(res)
 
-    pano_id = -1
-    pano_id = select_next_panorama()
-    print(f"selected pano_id: {pano_id}")
-    if pano_id is None:
-        print("Error: No data could be loaded.")
-        exit()
 
-    # gdf_gsv_points = create_gsv_map(metadata_df)
-    # gdf_gsv_points.to_file(pathGSVPoints, layer='locations', driver="GPKG")
-    #
-    # gdf_temp_gsv_points = temp_create_gsv_map(metadata_df)
-    # gdf_temp_gsv_points.to_file(pathGSVPointsTemp, layer='locations', driver="GPKG")
-
-    # Assuming `matching_rows` is the DataFrame with your search results
-
-
-    # Convert to grayscale if the image has multiple channels
-    # depth_image = np.random.randint(0, 255, (100, 100), dtype=np.uint8)  # Replace with your depth image
-    # start_pixel = (50, 50)  # Example starting point
-    # threshold = 10  # Depth difference threshold
-    #
-    # # Run segmentation
-    # segmented_mask = segment_depth_object(depth_image, start_pixel, threshold)
-    #
-    # # Display result
-    # cv2.imshow("Segmented Object", segmented_mask)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    pano_id_1 = "gp3wUHUQypyd-Eyody0NgA"
+    pano_id_2 = "Dr-EZ9xWZKcx5jzWfX7kQQ"
 
     # Create a window and set the mouse callback
     cv2.namedWindow("Depth Image")
     cv2.setMouseCallback("Depth Image", mouse_callback)
 
 
-    # pano_id = "img_0A1aUxQvyr_KqmaokVoqvQ"
-    # pano_id = "9gH87Tg-pDSOLTGDIhKTuQ"
-    selected_points = []
+    pano_id = pano_id_1
     load_panorama(pano_id)
+
+    # create_gsv_map()
+
+    gdf_gsv_points = create_gsv_map(metadata_df)
+    # gdf_gsv_points.to_file(pathGSVPoints, layer='locations', driver="GPKG")
+    #
+    # gdf_temp_gsv_points = temp_create_gsv_map(metadata_df)
+    # gdf_temp_gsv_points.to_file(pathGSVPointsTemp, layer='locations', driver="GPKG")
+
+
+    redraw()
 
     while True:
         # Display the original image
@@ -667,6 +653,10 @@ if __name__ == "__main__":
         if key == ord('s'):
             print("Save input")
             save_prediction(pano_id)
+        if key == ord('h'):
+            print("Help")
+            print(f"Panorama ID: {pano_id}")
+            # print(f"Panorama ID: {pano_id}")
         if key == 8:
             if len(selected_points) > 0:
                 selected_points.pop()

@@ -145,6 +145,18 @@ def get_route_length (graph, route):
     # total_length = route_gdf['length'].sum()
     return total_length
 
+
+
+def create_gsv_map(metadata_df):
+
+    gdf = gpd.GeoDataFrame(
+        metadata_df,
+        geometry=[Point(xy) for xy in zip(metadata_df['longitude'], metadata_df['latitude'])],
+        crs="EPSG:4326"  # Use WGS84 (latitude/longitude) CRS
+    )
+
+    return gdf
+
 def get_parks_and_forests (shape_orginial, area_min_size, max_distance):
     # expand the shape file by the defined distance
     parks_boundry = expand_area(shape_orginial, max_distance)
@@ -344,3 +356,13 @@ def print_df_results(res, head="Results:"):
             # Format and print the row as a single line
             str = f"Row {index} =>   " + ", ".join([f"{col}: {val}" for col, val in row.items()])
             print(str)
+
+def save_gsv_points(gdf, filepath):
+
+    with open(filepath, 'w', newline='') as file:
+        # Iterate over selected features and write panoID values
+        for idx, row in gdf.iterrows():
+            line = f"panoID: {row['panoID']} panoDate: {row['panoDate']} longitude: {row['longitude']} latitude: {row['latitude']}\n"
+            print(f"saving line {row['panoID']} => {line}")
+            file.write(line)
+
