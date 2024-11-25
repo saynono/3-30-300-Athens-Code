@@ -152,11 +152,11 @@ def redraw():
 #
 # def create_gsv_map(metadata_df):
 #
-#     gdf = gpd.GeoDataFrame(
-#         metadata_df,
-#         geometry=[Point(xy) for xy in zip(metadata_df['longitude'], metadata_df['latitude'])],
-#         crs="EPSG:4326"  # Use WGS84 (latitude/longitude) CRS
-#     )
+    # gdf = gpd.GeoDataFrame(
+    #     metadata_df,
+    #     geometry=[Point(xy) for xy in zip(metadata_df['longitude'], metadata_df['latitude'])],
+    #     crs="EPSG:4326"  # Use WGS84 (latitude/longitude) CRS
+    # )
 #
 #     return gdf
 #
@@ -319,6 +319,13 @@ def select_next_panorama(unpredicted=True):
 
 def add_gsvp_to_buffer(gsvp, buffer_df):
     tree_list,_ = load_prediction(gsvp['panoID'])
+
+    print(f"  tree_list ::: {tree_list}")
+    # remove trees that are farther away than 1500cm
+    #IMPORTANT
+    tree_distance_max = 2000
+    tree_list = [item for item in tree_list if item[2] <= tree_distance_max]
+
     trees = osm_utils.get_tree_points((gsvp.geometry.x,gsvp.geometry.y), tree_list)
     rays = []
     origin = Point(gsvp.geometry.x,gsvp.geometry.y)
@@ -367,12 +374,10 @@ def find_valid_intersections(main_df, other_dfs):
         if len(intersections_line) > 1 :
             closest_point = min(intersections_line, key=lambda p: main_df.trees[cnt].distance(p))
             intersections_line = [closest_point]
-            print(f" {cnt} / {main_start_point} ================= > intersection : {closest_point}    origin: =====>> {main_df.trees[cnt]}     len:{len(intersections_line)}")
+            print(f" {cnt} / {main_start_point} ================= > intersection : {closest_point}    origin: =====>> {main_df.trees[cnt]}")
         elif len(intersections_line) == 0 :
             print(f" {cnt} / {main_start_point} ================= > Adding Free Floating Tree: {main_df.trees[cnt]}")
             intersections_line = [main_df.trees[cnt]]
-
-        print(f"intersections_line length: {len(intersections_line)}")
 
         intersections = intersections + intersections_line
 
@@ -397,7 +402,7 @@ def cluster_points(gdf, cluster_radius = 1):
     coords = np.array([(point.x, point.y) for point in gdf.geometry])
 
     # DBSCAN clustering
-    dbscan = DBSCAN(eps=0.000012715*cluster_radius, min_samples=1)  # eps roughly one meter
+    dbscan = DBSCAN(eps=0.000012715*cluster_radius, min_samples=2)  # eps roughly one meter
     gdf['cluster'] = dbscan.fit_predict(coords)
 
     # Calculate centroids for each cluster
@@ -458,8 +463,9 @@ def create_intersections(metadata_df):
 
         pano_id = gsvp['panoID']
         current_tree_buffer = tree_buffer_df.loc[tree_buffer_df['pano_id'] == pano_id].iloc[0]
-        # Create a buffer of 20 meters around the reference point
-        radius = 25  # Radius in meters
+        # Create a buffer of x meters around the reference point
+        #IMPORTANT
+        radius = 20  # Radius in meters
         # search_area = Point(gsvp['longitude'],gsvp['latitude']).buffer(radius)
         search_area = gsvp.geometry.buffer(radius)
         # Filter points within the buffer
@@ -504,7 +510,7 @@ def create_intersections(metadata_df):
 
 
     # Cluster all trees to remove double entries
-    res_clustered_gdf = cluster_points(intersections_gdf,2.2)
+    res_clustered_gdf = cluster_points(intersections_gdf,1.5)
     intersections_gdf = res_clustered_gdf
 
     return intersections_gdf
@@ -523,7 +529,8 @@ if __name__ == "__main__":
     gsvDataPrediction = os.path.join(gsvRoot,"prediction-data/")
 
     pathMetaData         = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/metadata"
-    pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/selected_pano_ids.txt"
+    # pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/selected_pano_ids.txt"
+    pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Walks/Walk-Team-01-GSV-Points.txt"
     # pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/selected_pano_ids_crossing.txt"
 
     pathGSVPoints        = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/generated/Kypseli-All-GSV-Points.gpkg"
@@ -533,7 +540,8 @@ if __name__ == "__main__":
     pathDataGenerated    = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/generated/temp"
 
 
-    metadata_df = utils.load_all_csvs(pathMetaDataSelected)
+    # metadata_df = utils.load_all_csvs(pathMetaDataSelected)
+    metadata_df = utils.load_all_csvs(pathMetaData)
     # res = utils.find_entry_by_panoID(metadata_df,"0A1aUxQvyr_KqmaokVoqvQ")
     # utils.print_df_results(res)
 
@@ -541,11 +549,6 @@ if __name__ == "__main__":
         os.mkdir(pathDataGenerated)
 
 
-    pano_id_1 = "gp3wUHUQypyd-Eyody0NgA"
-    pano_id_2 = "Dr-EZ9xWZKcx5jzWfX7kQQ"
-    pano_id_3 = "0A1aUxQvyr_KqmaokVoqvQ"
-
-    panos = (pano_id_1,pano_id_2,pano_id_3)
 
 
 

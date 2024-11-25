@@ -1,27 +1,30 @@
 import csv
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 import pandas as pd
-import geopandas as gpd
-import osmnx as ox
-from pympler.garbagegraph import start_debug_garbage
+# import geopandas as gpd
+# import osmnx as ox
+# from pympler.garbagegraph import start_debug_garbage
 # import osmnx.utils_geo
-from pyproj import CRS
-import matplotlib.pyplot as plt
-import networkx as nx
-from shapely.geometry import Point, LineString, Polygon
-from shapely import wkt
+# from pyproj import CRS
+# import matplotlib.pyplot as plt
+# import networkx as nx
+# from shapely.geometry import Point, LineString, Polygon
+# from shapely import wkt
 import utils
-import random
-import math
-from ultralytics import YOLO
+# import random
+# import math
+# from ultralytics import YOLO
 import os, os.path
 import cv2
 import numpy as np
-import skimage as ski
-import A3_StitchImprove
-from geopy.distance import distance as geopy_distance
+from ultralytics import SAM
+# from ultralytics import FastSAM
+
+# import skimage as ski
+# import A3_StitchImprove
+# from geopy.distance import distance as geopy_distance
 
 
 # Global variables to store clicked point and mask
@@ -79,12 +82,22 @@ def mouse_callback(event, x, y, flags, param):
         clicked_point = (y%height, x)  # Note: OpenCV uses (row, col) format
         raw_depth = depth_data[clicked_point[0],clicked_point[1]]*100
         selected_points.append((clicked_point[1],clicked_point[0],raw_depth))
+        segmented_mask = segmentation(regular_image, [x,y] )
+        # segmented_mask = segmentation(depth_image, [x,y] )
+
         redraw()
         print("Mouse Interaction Done")
-    elif event == cv2.EVENT_MOUSEMOVE:
-        print(f"Mouse Moved: [{x},{y}]")
+    # elif event == cv2.EVENT_MOUSEMOVE:
+    #     print(f"Mouse Moved: [{x},{y}]")
+    # elif event == cv2.EVENT_RBUTTONDOWN:
+    #     segmented_mask = segmentation(regular_image, [x,y] )
+    #     print(f"segmented_mask : {segmented_mask.shape}")
+    #     redraw()
 
-
+def segmentation(image, point):
+    results = model(image, points=[point])
+    image_res = results[0].plot()
+    return image_res
 
 def redraw():
         global clicked_point, clicked_point_prev, segmented_mask, depth_image, stacked_images, colored_mask, regular_image, stitched_image, depth_data, selected_points
@@ -103,18 +116,20 @@ def redraw():
 
         display_image = regular_image.copy()
 
+        if segmented_mask is not None:
+            display_image = segmented_mask.copy()
+        else:
+            # Convert RGB image to HSV
+            hsv_image = cv2.cvtColor(display_image, cv2.COLOR_BGR2HSV)
 
-        # Convert RGB image to HSV
-        hsv_image = cv2.cvtColor(display_image, cv2.COLOR_BGR2HSV)
+            # Set Saturation to maximum (255)
+            # hsv_image[:, :, 1] = 255
 
-        # Set Saturation to maximum (255)
-        # hsv_image[:, :, 1] = 255
+            # Set Value to maximum (255)
+            hsv_image[:, :, 2] = 255
 
-        # Set Value to maximum (255)
-        hsv_image[:, :, 2] = 255
-
-        # Convert back to RGB
-        display_image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
+            # Convert back to RGB
+            display_image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
         # cv2.drawContours(display_image, contours, -1, color=(0,255,255), thickness=1)
 
 
@@ -137,7 +152,9 @@ def redraw():
 
 
 def load_panorama(pano_id):
-    global regular_image, depth_image, depth_data, stitched_image, display_image, stacked_images, has_predictions
+    global regular_image, depth_image, depth_data, stitched_image, display_image, stacked_images, has_predictions, segmented_mask
+
+    segmented_mask = None
 
     regular_image, depth_image, depth_data = load_image_set(pano_id)
 
@@ -274,13 +291,20 @@ if __name__ == "__main__":
     gsvDataPrediction = os.path.join(gsvRoot,"prediction-data/")
 
     pathMetaData         = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/metadata"
-    pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/selected_pano_ids.txt"
+    # pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/selected_pano_ids.txt"
+    pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Walks/Walk-Team-01-GSV-Points.txt"
+
 
     pathGSVPoints        = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/generated/Kypseli-All-GSV-Points.gpkg"
     pathGSVPointsTemp    = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/generated/Kypseli-All-GSV-Points-TEMP.gpkg"
 
 
     metadata_df = utils.load_all_csvs(pathMetaDataSelected)
+
+    model = SAM('/home/nono/Documents/workspaces/ai/models/sam2.1_b.pt')
+    # model = FastSAM("/home/nono/Documents/workspaces/ai/models/FastSAM-s.pt")  # or FastSAM-x.pt
+    model.info()
+
 
     pano_id = -1
     pano_id = select_next_panorama()
@@ -316,6 +340,7 @@ if __name__ == "__main__":
         if key == 8:
             if len(selected_points) > 0:
                 selected_points.pop()
+                segmented_mask = None
                 redraw()
 
         if key == ord('x'):
@@ -357,6 +382,7 @@ if __name__ == "__main__":
                 pano_id = pid
                 load_panorama(pano_id)
                 redraw()
+
 
     cv2.destroyAllWindows()
 

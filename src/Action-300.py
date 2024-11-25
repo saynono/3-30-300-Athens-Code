@@ -289,7 +289,7 @@ if __name__ == "__main__":
     # in meters
     max_distance = 300
 
-    root = '/Users/nono/Documents/workspaces/GIS/3-30-300-Athens-data/maps/Kypseli-All/'
+    root = '../3-30-300-Athens-Data/maps/Kypseli-All/'
     shape_file = "Kypseli-All.shp"
 
 
@@ -317,9 +317,6 @@ if __name__ == "__main__":
     outputGraphWalking = os.path.join(root_generated, graph_file)
     outputRoutesShp = os.path.join(root_generated, shape_file_routes)
     routes_list = os.path.join(root_generated, routes_list)
-
-
-
 
     gdf_in = gpd.read_file(inputShp)
 
@@ -391,7 +388,7 @@ if __name__ == "__main__":
     parks_and_forests_filtered.to_file(outputParksForestsSelectedShp, driver="GPKG")
     parks_and_forests_filtered['park_nodes'] = parks_and_forests_filtered.apply(lambda row: [ox.nearest_nodes(graph, point[0], point[1]) for point in row.geometry.exterior.coords], axis=1)
 
-    do_routes = True
+    do_routes = False
     # do_routes = False
     if do_routes:
 

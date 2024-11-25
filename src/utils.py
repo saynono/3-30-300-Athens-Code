@@ -179,7 +179,7 @@ def get_parks_and_forests (shape_orginial, area_min_size, max_distance):
 
 
     # Define the OSM tags to search for parks and forests
-    tags = {'leisure': 'park', 'landuse': 'forest'}
+    tags = {'leisure': 'park', 'landuse': 'forest', 'natural': 'wood'}
 
     # Download parks and forests from OSM within the boundary polygon
     parks_and_forests = ox.features_from_polygon(boundary_polygon, tags)
@@ -363,6 +363,6 @@ def save_gsv_points(gdf, filepath):
         # Iterate over selected features and write panoID values
         for idx, row in gdf.iterrows():
             line = f"panoID: {row['panoID']} panoDate: {row['panoDate']} longitude: {row['longitude']} latitude: {row['latitude']}\n"
-            print(f"saving line {row['panoID']} => {line}")
+            # print(f"saving line {row['panoID']} => {line}")
             file.write(line)
 
