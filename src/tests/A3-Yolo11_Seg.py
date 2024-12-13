@@ -3,7 +3,9 @@ import cv2
 
 # Load a COCO-pretrained YOLO11n model
 path_yolo = "/home/nono/Documents/workspaces/ai/models/yolo11m-seg.pt"
-model = YOLO(path_yolo)
+# model = YOLO("yolov8x-oiv7.pt")
+# model = YOLO(path_yolo)
+model = YOLO("yolo11m.pt")
 
 
 pano_id = "0u0osFBRo18zmXVeUQ7O_w"

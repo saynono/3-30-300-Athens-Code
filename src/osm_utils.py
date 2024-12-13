@@ -7,6 +7,7 @@ import os, os.path
 import utils
 from geopy.distance import distance as geopy_distance
 from pyproj import Geod
+import networkx as nx
 
 def create_gsv_map(metadata_df):
 
@@ -103,3 +104,35 @@ def find_intersections(gdf):
     # Create a GeoDataFrame of intersection points
     intersection_gdf = gpd.GeoDataFrame(geometry=intersections, crs=gdf.crs)
     return intersection_gdf
+
+
+def test_graph(G):
+    default_weight = 1
+    G = G.to_undirected()
+    # nx.set_edge_attributes(G, 1, "weight")
+    for u, v, data in G.edges(data=True):
+        if 'length' not in data:
+            print(f"Edge ({u}, {v}) does not have a 'length' attribute")
+        # else:
+        #     print(f"Edge ({u}, {v}) has a 'length' attribute with value {data['length']}")
+
+        if "weight" not in data:
+            print(f"Edge ({u}, {v}) is missing a weight.")
+            # G[u][v]['weight'] = default_weight
+            data['weight'] = default_weight
+
+    for node in G.nodes:
+        if G.degree(node) < 2:
+            print(f"Node {node} may be a dead end.")
+
+    if nx.is_connected(G):
+        print("Graph is connected.")
+    else:
+        print("ERROR: Graph is not connected.")
+
+    # if nx.is_strongly_connected(G):
+    #     print("Graph is STRONGLY connected.")
+    # else:
+    #     print("ERROR: Graph is not STRONGLY connected.")
+
+    return G

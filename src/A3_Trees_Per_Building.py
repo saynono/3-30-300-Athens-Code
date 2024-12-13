@@ -71,7 +71,8 @@ if __name__ == "__main__":
     # graph_file = shape_file_name+"-Graph-Walking.graphml"
     csv_file_residential_buildings = shape_file_name+"-Trees_Per-Building.csv"
     residentialBuildings_path = os.path.join(root_generated, shape_file_name+"-Residential-Buildings.gpkg")
-    residentialBuildingsWTrees_path = os.path.join(root_generated, shape_file_name+"-Residential-Buildings-w-Trees.gpkg")
+    # residentialBuildings_path = os.path.join(root_generated, shape_file_name+"-Residential-Buildings.gpkg")
+    residentialBuildings_A3 = os.path.join(root_generated, shape_file_name+"-Residential-Buildings-A3.gpkg")
     # trees_path = os.path.join(root_generated, shape_file_name+"-Residential-Buildings.gpkg")
     trees_path = os.path.join(pathDataGenerated,f"__Kypseli-All-GSV-Tree-Points-CROSSING-Intersections.gpkg")
 
@@ -90,7 +91,8 @@ if __name__ == "__main__":
 
 
     buildings_w_trees_gdf = get_trees_per_building(buildings_gdf, trees_gdf, 15 )
-    buildings_w_trees_gdf.to_file(residentialBuildingsWTrees_path, layer='locations', driver="GPKG")
+    buildings_w_trees_gdf.to_file(residentialBuildings_path, layer='locations', driver="GPKG")
+    buildings_w_trees_gdf.to_file(residentialBuildings_A3, layer='locations', driver="GPKG")
 
     if True:
         exit(0)

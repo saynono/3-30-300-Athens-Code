@@ -5,7 +5,8 @@
 
 import requests
 from OSMPythonTools.nominatim import Nominatim
-from shapely.geometry import Point, LineString, Polygon
+from shapely.geometry import Point, LineString, Polygon, MultiPolygon
+from shapely.ops import unary_union
 import osmnx as ox
 # import osmnx.utils_graph
 import osmnx.routing
@@ -103,7 +104,7 @@ def get_route_building_park(graph, building, park):
     # selected_park = parks_and_forests_filtered.sample(n=1)
     # selected_park = parks_and_forests_filtered.iloc[0]
     # print('selected_park\n', selected_park,selected_park.geometry.centroid)
-    park_boundries = park.geometry
+    # park_boundries = park.geometry
     park_location = [park.geometry.centroid.x, park.geometry.centroid.y]
 
 
@@ -121,6 +122,33 @@ def get_route_building_park(graph, building, park):
     return route
 
 
+
+def get_route_building_park_nodes(graph, building, park_nodes):
+
+    home_location = [building.geometry.centroid.x, building.geometry.centroid.y]
+    shortest_length = float('inf')
+    shortest_route = None
+    home_node = ox.nearest_nodes(graph, home_location[0], home_location[1])
+    home_edge = ox.nearest_edges(graph, home_location[0], home_location[1])
+    for idx, node in park_nodes.iterrows():
+        park_location = [node.geometry.x, node.geometry.y]
+        # print(f"Node: {park_location}")
+        park_node = ox.nearest_nodes(graph, park_location[0], park_location[1])
+        route = nx.shortest_path(graph, home_node, park_node, weight='length')
+        if shortest_route is None:
+            shortest_route = route
+            shortest_length = get_route_length(graph, route)
+        else:
+            length = get_route_length(graph, route)
+            if shortest_length > length > 0:
+                shortest_length = length
+                shortest_route = route
+    # route = ox.routing.shortest_path(graph, home_node, park_node, weight='length')
+
+    return shortest_route
+
+
+
 def clip_route_to_park_boundries(graph, route, park):
     route_truncated = []
     for node in route:
@@ -136,7 +164,27 @@ def get_route_length (graph, route):
     # route_time = int(sum(ox.utils_graph.route_to_gdf(graph, route, "travel_time")["travel_time"]))
 
     # total_length = sum(ox.utils_graph.get_route_edge_attributes(graph, route, 'length'))
-    total_length = int(sum(ox.routing.route_to_gdf(graph, route, weight="length")["length"]))
+    total_length = -1
+    if len(route) > 1:
+        # try :
+        #     router = ox.routing.route_to_gdf(graph, route, weight="length")
+        #     total_length = int(sum(router["length"]))
+
+        total_length = sum(graph[u][v][0]["length"] for u, v in zip(route[:-1], route[1:]))
+        # for i in range(len(route) - 1):
+        #     u, v = route[i], route[i + 1]
+        #     if 'length' not in graph[u][v][0]:
+        #         print(f"eeorrorroror length    => {u}  <-> {v}   {graph[u][v]}")
+        #         # if 'length' not in graph[v][u]:
+        #         #     print(f"double eeorrorroror length    => {u}  <-> {v}")
+        #     edge_length = graph[u][v][0].get("length", 0)  # Use 0 if "length" is missing
+        #     total_length += edge_length
+
+        # print("routing... ", f"Length:{total_length}",graph, route)
+        # except Exception as e:
+        #     print(f"An error occurred: {e}")
+        #     print(route)
+
     # ox.distance.
     # ox.routing.route_to_gdf()
     # total_length = sum(ox.utils_graph.route_to_gdf(graph, route, 'length'))
@@ -184,31 +232,45 @@ def get_parks_and_forests (shape_orginial, area_min_size, max_distance):
     # Download parks and forests from OSM within the boundary polygon
     parks_and_forests = ox.features_from_polygon(boundary_polygon, tags)
     parks_and_forests = parks_and_forests.to_crs(epsg=3857)
-    print(f"CRS parks_and_forests is set to: {parks_and_forests.crs}")
+    parks_and_forests["osmid_park"] = 0
+    print(f"=== PARKS : {parks_and_forests.columns}")
+    for idx, park in parks_and_forests.iterrows():
+        print(f"Park : {idx} ")
+        osmid_value = idx[1]
+        park['osmid_park'] = osmid_value
+        print(f"Row Index: {idx}, OSMID: {osmid_value}   {park['osmid_park']}")
+    #Following few lines are to join parts of green strips that are divided by a street.
+    # Steps are:
+    # - create a buffer,
+    # - join overlapping parts,
+    # - shrink again to evaluate the size,
+    # - filter by size,
+    # - buffer again and now filter all existsing parks that are within the new areas
 
-    # Step 3: Calculate the area in square meters
+    parks_and_forests_buffer = parks_and_forests.geometry.buffer(8)
+    combined_geometry = unary_union(parks_and_forests_buffer)
+    combined_geometry = combined_geometry.buffer(-8)
+
+    if combined_geometry.geom_type == 'Polygon':
+        exploded_geometries = [combined_geometry]
+    else:
+        exploded_geometries = list(combined_geometry.geoms)
+
+    exploded_geometries_selected = []
+    for geom in exploded_geometries:
+        if (geom.area / 10_000) >= area_min_size:
+            exploded_geometries_selected.append(geom)
+
+    multi_polygon = MultiPolygon(exploded_geometries_selected)
+    multi_polygon = multi_polygon.buffer(8)
+    parks_and_forests = parks_and_forests[parks_and_forests['geometry'].within(multi_polygon)]
+
     parks_and_forests['area'] = parks_and_forests.geometry.area
-
-    # Optional: Convert to square kilometers and hectares
     parks_and_forests['area_km2'] = parks_and_forests['area'] / 1_000_000
     parks_and_forests['area_ha'] = (parks_and_forests['area'] / 10_000)
 
 
-    # # Step 4: Print the name and area for each shape (assuming 'Name' is the name column)
-    # for index, row in parks_and_forests.iterrows():
-    #     shape_name = row['name']  # Replace 'Name' with the actual column name for shape names
-    #     # shape_name_en = row['name_en']
-    #     shape_area = row['area_hectares']
-    #     print(f"Shape: {shape_name}, Area: {shape_area} hectares")
-
-
-
-    # Save the retrieved parks and forests to a new shapefile
-    # parks_and_forests.to_file(outputParksForestsShp)
-
-    # Filter the GeoDataFrame based on the area
-    parks_and_forests_filtered = parks_and_forests[parks_and_forests['area_ha'] > area_min_size]
-    return parks_and_forests_filtered
+    return parks_and_forests
 
 
 def expand_area(shapefile_in, expand_by):
@@ -365,4 +427,14 @@ def save_gsv_points(gdf, filepath):
             line = f"panoID: {row['panoID']} panoDate: {row['panoDate']} longitude: {row['longitude']} latitude: {row['latitude']}\n"
             # print(f"saving line {row['panoID']} => {line}")
             file.write(line)
+
+def create_buffer_in_meters(gdf, buffer_in_meters):
+    gdf_buffered = gdf.copy()
+    if gdf_buffered.crs != 'EPSG:3857':
+        gdf_buffered = gdf_buffered.to_crs('EPSG:3857')
+    gdf_buffered.geometry = gdf_buffered.geometry.buffer(buffer_in_meters)
+
+    if gdf_buffered.crs != gdf.crs:
+        gdf_buffered = gdf_buffered.to_crs(gdf.crs)
+    return gdf_buffered
 
