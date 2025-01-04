@@ -1,7 +1,6 @@
 import datetime
 import os
 
-import matplotlib.pyplot as plt
 import numpy as np
 import geopandas as gpd
 import rasterio
@@ -9,7 +8,6 @@ from rasterio.io import MemoryFile
 from rasterio.transform import from_bounds
 from rasterio.mask import mask
 from rasterio.features import rasterize
-from affine import Affine
 from shapely import (
     Point
 )
