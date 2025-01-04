@@ -23,10 +23,10 @@ if __name__ == "__main__":
     config = SHConfig("Athens-330300")
     config.sh_token_url = 'https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token'
 
-    aoi_gdf = gpd.read_file("/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/Kypseli-All.shp")
+    aoi_gdf = gpd.read_file("../../3-30-300-Athens-Data/maps/Kypseli-All/Kypseli-All.shp")
 
-    satellite_img_path = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/temp/sentinel.png"
-    satellite_np_path = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/temp/sentinel"
+    satellite_img_path = "../../3-30-300-Athens-Data/temp/sentinel.png"
+    satellite_np_path = "../../qq3-30-300-Athens-Data/temp/sentinel"
 
     root = '../../3-30-300-Athens-Data/maps/Kypseli-All/'
     shape_file = "Kypseli-All.shp"

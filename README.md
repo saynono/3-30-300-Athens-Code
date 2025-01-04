@@ -63,6 +63,24 @@ pip install -r requirements.txt
 
 
 
+### SentinelHub
+
+needs a file in ~/.config/sentinelhub/config.toml
+
+[default-profile]
+sh_client_id = "sh-xxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+sh_client_secret = "xxxxxxxxxxxxxxxxxx"
+
+[Athens-330300]
+instance_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+sh_client_id = "sh-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+sh_client_secret = "xxxxxxxxxxxxxxxxxx"
+sh_base_url = "https://sh.dataspace.copernicus.eu"
+sh_auth_base_url = "https://identity.dataspace.copernicus.eu"
+sh_token_url = "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"
+
+
+
 # Little Helper funcitons:
 
 Syncing server with local downloads

@@ -10,3 +10,6 @@ osmnx == 1.9.4
 tqdm
 pymeanshift
 geopandas
+sentinelhub == 3.11.1
+rasterio == 1.4.3
+opencv-python
