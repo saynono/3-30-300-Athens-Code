@@ -9,3 +9,4 @@ pymeanshift-master*
 .DS_Store
 **/keys.txt
 venv/
+**/*.pt
