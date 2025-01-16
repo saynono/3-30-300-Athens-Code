@@ -5,8 +5,8 @@
 
 # 3-30-300 Athens
 
-The repository began as a fork of [Treepedia_Public](https://github.com/mittrees/Treepedia_Public) from the MIT Senseable City Lab.
-It is using their approach to download and analyse google street view images for the 3 rule.
+The repository is based on [Treepedia_Public](https://github.com/mittrees/Treepedia_Public) from the MIT Senseable City Lab.
+It is using their approach to download and analyse google street view images for the 3 rule. 
 
 In general there are three parts to the toolkit. One for each rule of the 3, 30, 300 
 
