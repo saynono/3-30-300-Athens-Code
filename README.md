@@ -3,35 +3,36 @@
 
 
 
-# 3-30-300 Athens, based on Treepedia
+# 3-30-300 Athens
 
-The repository began as a fork of [Treepedia_Public](https://github.com/mittrees/Treepedia_Public) from the MIT Senseable City Lab. It's a brilliant approach to measuring street trees and I'm grateful for their work. 
+The repository began as a fork of [Treepedia_Public](https://github.com/mittrees/Treepedia_Public) from the MIT Senseable City Lab.
+It is using their approach to download and analyse google street view images for the 3 rule.
 
-### Process
+In general there are three parts to the toolkit. One for each rule of the 3, 30, 300 
 
-The only change to the process that is really Chicago-specifc is batching the processing by community area. This code begins by downloading shapefiles of the drivable street network within multipolygon boundaries of each community area. The code that follows would still work with any shapefile input. Other than that, since the original project was from 2018, I have upgarded the everything to work with Python 3 and the latest Google APIs.
+Here a brief explanation to each rule.
 
-So far, what I have implemented can be run as follows.
+#### 3 Rule: 3 Trees visible from window
 
-1. Download the street network for an individual community area with:
-  ```bash
-  python treepedia/download_street_network.py
-  ```
-  The current default is Community Area #1, Rogers Park. Edit the file to change the community area. 
+#### 30 Rule: 30 percent tree coverage
 
-1. Tag the steet network with evenly spaced points, from which we will grab...
-  ```bash
-  python treepedia/create_points.py
-  ```
+#### 300 Rule: maximum 300 meters to closest green area
 
-1. Metadata.
+Each rule has its own set of scripts.
 
-### Development
 
-To break up the processing, we download the drivable street network and parse streetview data by Chicago Community Area, the official boundaries defined by the city. Conveniently, community area #1, Rogers Park, is one of the smaller boundaries so it's a good one for testing and development.
-- [Boundaries - Community Areas (current)](https://data.cityofchicago.org/Facilities-Geographic-Boundaries/Boundaries-Community-Areas-current-/cauq-8yn6)
+## The Toolkit
 
-#### Dependencies
+### Setup
+
+#### Download Repository
+
+```bash
+git clone https://github.com/saynono/3-30-300-Athens-Code.git
+```
+
+
+####  Installing Dependencies
 
 1. Before installing dependencies per `requirements.txt`, you must install GDAL.
 ```bash
@@ -62,6 +63,12 @@ pip install -r requirements.txt
 - For the [Google Street View API](https://developers.google.com/maps/documentation/streetview/metadata), I am currently using an API Key but not a digital signature. Let's set one up.
 
 
+
+
+1. Metadata.
+
+To break up the processing, we download the drivable street network and parse streetview data by Chicago Community Area, the official boundaries defined by the city. Conveniently, community area #1, Rogers Park, is one of the smaller boundaries so it's a good one for testing and development.
+- [Boundaries - Community Areas (current)](https://data.cityofchicago.org/Facilities-Geographic-Boundaries/Boundaries-Community-Areas-current-/cauq-8yn6)
 
 ### SentinelHub
 
@@ -182,7 +189,7 @@ After finishing the computing, you can run the code of "Greenview2Shp.py" [here]
   * Shapely
   * Fiona
   * xmltodict 
-  * Python (2.7)
+  * Python (3.11)
 
 # Contributors
 Project Co-Leads: Xiaojiang Li and Ian Seiferling
