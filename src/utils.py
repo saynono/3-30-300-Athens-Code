@@ -63,7 +63,7 @@ def retrieveAddressFromLocationViaNomination(latitude, longitude):
     # return None
 
     # Step 2: Your Google Maps API key
-    api_key = "AIzaSyDqAHRrEPkCKZdGX0owZtbzCdATlgqbkmE"  # Replace with your actual API key
+    api_key = "---------------"  # Replace with your actual API key
 
     # Step 3: Build the request URL
     url = f"https://maps.googleapis.com/maps/api/geocode/json?latlng={latitude},{longitude}&key={api_key}"
