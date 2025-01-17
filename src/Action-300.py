@@ -304,7 +304,7 @@ def get_walking_routes_to_parks_nodes(buildings_gdf, parks_nodes, graph, routes_
 
 
 
-def get_address_for_building(buildings, building_osmid):
+def get_address_for_building(buildings, building_osmid, keylist):
     # buildings = ox.features_from_place('Κυψέλη, Αθήνα, Greece', tags={'building': True})
     building = buildings[buildings.osmid == building_osmid]
     # If the building exists, get its geometry
@@ -313,7 +313,7 @@ def get_address_for_building(buildings, building_osmid):
         centroid = geometry.centroid  # Get the centroid of the building for reverse geocoding
         latitude = centroid.y
         longitude = centroid.x
-        address = utils.retrieveAddressFromLocationViaNomination(latitude,longitude)
+        address = utils.retrieveAddressFromLocationViaNomination(latitude,longitude, keylist)
         print(f"Building OSMID: {building_osmid}, Centroid Coordinates: Latitude = {latitude}, Longitude = {longitude}")
     else:
         print("Building with the given OSMID not found.")

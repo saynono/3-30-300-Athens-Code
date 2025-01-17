@@ -213,6 +213,7 @@ def PanoramaStitching_ogr_6Horizon(GSVinfoFolder, greenmonth, GSVcacheFolder, GS
     fov = 360/photos_per_panorama
     gsv_width = round(400.0/60.0*fov)*2
     gsv_width_total = photos_per_panorama*gsv_width
+    gsv_key = keylist[0]
     # np.arange(0, 10, 1)
     headingArr = 360/photos_per_panorama*np.arange(0,photos_per_panorama,1)
     pixel_step = photos_per_panorama
@@ -323,7 +324,7 @@ def PanoramaStitching_ogr_6Horizon(GSVinfoFolder, greenmonth, GSVcacheFolder, GS
                     try:
 
                         # using different keys for different process, each key can only request 25,000 imgs every 24 hours
-                        URL = f"http://maps.googleapis.com/maps/api/streetview?size={gsv_width}x400&pano=%s&fov={fov}&heading=%d&pitch=%d&sensor=false&key={google_key}"%(panoID,heading,pitch)
+                        URL = f"http://maps.googleapis.com/maps/api/streetview?size={gsv_width}x400&pano=%s&fov={fov}&heading=%d&pitch=%d&sensor=false&key={gsv_key}"%(panoID,heading,pitch)
                         imgCachePath = f"__img_{panoID}_{heading}_{pitch}.jpg"
                         imgCachePath = os.path.join(GSVcacheFolder,imgCachePath)
                         img = loadGSVImage(imgCachePath, URL)

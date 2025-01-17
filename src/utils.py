@@ -31,7 +31,7 @@ def get_keys(key_file):
     return keylist
 
 
-def retrieveAddressFromLocationViaNomination(latitude, longitude):
+def retrieveAddressFromLocationViaNomination(latitude, longitude, keylist):
     nominatim = Nominatim()
     # Perform reverse geocoding based on latitude and longitude
     location = nominatim.query('latitude=37.9836, longitude=23.7275')
@@ -63,7 +63,7 @@ def retrieveAddressFromLocationViaNomination(latitude, longitude):
     # return None
 
     # Step 2: Your Google Maps API key
-    api_key = "---------------"  # Replace with your actual API key
+    api_key = keylist[0]
 
     # Step 3: Build the request URL
     url = f"https://maps.googleapis.com/maps/api/geocode/json?latlng={latitude},{longitude}&key={api_key}"
