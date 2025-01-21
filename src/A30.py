@@ -26,7 +26,7 @@ if __name__ == "__main__":
     aoi_gdf = gpd.read_file("../../3-30-300-Athens-Data/maps/Kypseli-All/Kypseli-All.shp")
 
     satellite_img_path = "../../3-30-300-Athens-Data/temp/sentinel.png"
-    satellite_np_path = "../../qq3-30-300-Athens-Data/temp/sentinel"
+    satellite_np_path = "../../3-30-300-Athens-Data/temp/sentinel"
 
     root = '../../3-30-300-Athens-Data/maps/Kypseli-All/'
     shape_file = "Kypseli-All.shp"
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         buildings_gdf.to_file(pathResidentialBuildingsShp, driver="GPKG")  # Save as shapefile
 
 
-    print(f"Green percentage Selected: {(green_coverage_overall*100):.2f}%")
+    print(f"Green percentage Overall: {(green_coverage_overall*100):.2f}%")
     print(f"Green percentage Selected: {(green_coverage_selected*100):.2f}%")
 
 

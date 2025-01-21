@@ -128,24 +128,26 @@ def get_route_building_park_nodes(graph, building, park_nodes):
     home_location = [building.geometry.centroid.x, building.geometry.centroid.y]
     shortest_length = float('inf')
     shortest_route = None
+    shortest_node = None
     home_node = ox.nearest_nodes(graph, home_location[0], home_location[1])
     home_edge = ox.nearest_edges(graph, home_location[0], home_location[1])
     for idx, node in park_nodes.iterrows():
         park_location = [node.geometry.x, node.geometry.y]
-        # print(f"Node: {park_location}")
         park_node = ox.nearest_nodes(graph, park_location[0], park_location[1])
         route = nx.shortest_path(graph, home_node, park_node, weight='length')
         if shortest_route is None:
             shortest_route = route
             shortest_length = get_route_length(graph, route)
+            shortest_node = node
         else:
             length = get_route_length(graph, route)
             if shortest_length > length > 0:
                 shortest_length = length
                 shortest_route = route
+                shortest_node = node
     # route = ox.routing.shortest_path(graph, home_node, park_node, weight='length')
 
-    return shortest_route
+    return shortest_route, shortest_node
 
 
 
@@ -232,13 +234,20 @@ def get_parks_and_forests (shape_orginial, area_min_size, max_distance):
     # Download parks and forests from OSM within the boundary polygon
     parks_and_forests = ox.features_from_polygon(boundary_polygon, tags)
     parks_and_forests = parks_and_forests.to_crs(epsg=3857)
-    parks_and_forests["osmid_park"] = 0
+    parks_and_forests['osmid_park'] = [idx[1] for idx in parks_and_forests.index]
+    # parks_and_forests["osmid_park"] = parks_and_forests.index[1]
     print(f"=== PARKS : {parks_and_forests.columns}")
+
+    print(f"\n\n\n\n\nosmid_park : \n")
     for idx, park in parks_and_forests.iterrows():
-        print(f"Park : {idx} ")
-        osmid_value = idx[1]
-        park['osmid_park'] = osmid_value
-        print(f"Row Index: {idx}, OSMID: {osmid_value}   {park['osmid_park']}")
+        print(f"Park : {idx} ==> {park['osmid_park']}")
+    print(f"\n\n\n\n\n")
+
+    # for idx, park in parks_and_forests.iterrows():
+    #     print(f"Park : {idx} ")
+    #     osmid_value = idx[1]
+    #     park['osmid_park'] = osmid_value
+    #     print(f"Row Index: {idx}, OSMID: {osmid_value} ---  {park['osmid_park']}")
     #Following few lines are to join parts of green strips that are divided by a street.
     # Steps are:
     # - create a buffer,

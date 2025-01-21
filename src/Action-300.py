@@ -212,7 +212,7 @@ def get_walking_routes_to_parks_nodes(buildings_gdf, parks_nodes, graph, routes_
         for idx, building in buildings_gdf.iterrows():
 
             # building_centroid = building.geometry.centroid
-            print(f"Building #{cnt} {idx} / osmid:{building['osmid']}   iteration_no:{iteration_no}")
+            print(f"Building #{idx} / osmid:{building['osmid']}   iteration_no:{iteration_no}")
 
             if building['closest_park_iteration_no'] == iteration_no:
                 # if not math.isinf(building['closest_park_route_id']):
@@ -231,7 +231,7 @@ def get_walking_routes_to_parks_nodes(buildings_gdf, parks_nodes, graph, routes_
                 park_nodes = park_nodes.to_crs(epsg=4326)
 
                 try:
-                    walking_route = utils.get_route_building_park_nodes(graph, building, park_nodes)
+                    walking_route, park_node = utils.get_route_building_park_nodes(graph, building, park_nodes)
                     # walking_route = utils.clip_route_to_park_boundries(graph, walking_route, park_nodes)
                     walking_distance = utils.get_route_length(graph, walking_route)
                     # print(f"park_area   idx = {idx2[1]}")
@@ -241,17 +241,22 @@ def get_walking_routes_to_parks_nodes(buildings_gdf, parks_nodes, graph, routes_
                         walking_distance_min = walking_distance
                         closest_area = park_nodes
                         #TODO : this seems hacked... need to retrieve the osmid in the correct way
-                        closest_area_id = park_nodes['osmid_park']
+                        # closest_area_id = park_node.osmid_park
+                        closest_node = park_node
                         # closest_node = park_node
                         closest_route = walking_route
 
                 except nx.NetworkXNoPath:
                     print(f"No walking path to area {park_nodes.name}")
 
-            buildings_gdf.at[idx, 'closest_park_name'] = closest_area['name']
+
+            print(f"OKAY this is the closest_area_id : {closest_node['osmid_park']}, park_name: {closest_node['name']}")
+            print(f"===> {closest_node}")
+
+            buildings_gdf.at[idx, 'closest_park_name'] = closest_node['name']
             buildings_gdf.at[idx, 'closest_park_distance'] = walking_distance_min
             buildings_gdf.at[idx, 'closest_park_dist'] = round(walking_distance_min)
-            buildings_gdf.at[idx, 'closest_park_osmid'] = closest_area_id
+            buildings_gdf.at[idx, 'closest_park_osmid'] = closest_node['osmid_park'] #closest_area_id
             buildings_gdf.at[idx, 'closest_park_iteration_no'] = iteration_no
 
 
@@ -262,7 +267,7 @@ def get_walking_routes_to_parks_nodes(buildings_gdf, parks_nodes, graph, routes_
             try:
                 # route = nx.shortest_path(graph, building_point_node, closest_node, weight='length')
                 route = closest_route
-                print(f"     Distance to area {closest_area['name']}: {walking_distance_min:.2f} meters")
+                print(f"     Distance to area {closest_node['name']}: {walking_distance_min:.2f} meters")
                 # print(f"     From [{building_centroid.y:.6f}, {building_centroid.x:.6f}] to [{graph.nodes[closest_node]['y']:.6f}, {graph.nodes[closest_node]['x']:.6f}]")
                 # print('route',route)
                 # route_length = sum(ox.utils_graph.get_route_edge_attributes(graph, route, 'length'))
@@ -468,7 +473,7 @@ def get_all_park_boundary_nodes(parks_gdf, nodes_gdf, edges_gdf):
             nodes = get_park_edge_intersection(park, boundary_nodes)
             if len(nodes) > 0:
                 partial_edges_gdf = gpd.GeoDataFrame({'geometry': nodes}, crs="EPSG:4326")
-                park_boundary_nodes[idx] = partial_edges_gdf
+                # park_boundary_nodes[idx] = partial_edges_gdf
             else:
                 print("bah")
         else:
@@ -496,16 +501,22 @@ def get_all_park_boundary_nodes(parks_gdf, nodes_gdf, edges_gdf):
             # Convert points to GeoDataFrame
             # fallback_gdf = gpd.GeoDataFrame(geometry=[points], crs=parks_metric.crs)
             partial_edges_gdf = gpd.GeoDataFrame({'geometry': points}, crs="EPSG:4326")
-            park_boundary_nodes[idx] = partial_edges_gdf
 
         attributes = park.drop('geometry').drop('nodes').drop('ways').to_dict()
         # Step 3: Assign the attributes to all rows in points_gdf
         for key, value in attributes.items():
             partial_edges_gdf[key] = value
+            # print(f" attrib temp: {key} -> {value}")
 
+        park_boundary_nodes[idx] = partial_edges_gdf
 
     # Combine results into a single GeoDataFrame (optional)
     results_gdfs = [gdf for gdf in park_boundary_nodes.values()]
+
+    # attributes = park.drop('geometry').drop('nodes').drop('ways').to_dict()
+    # # Step 3: Assign the attributes to all rows in points_gdf
+
+
     return results_gdfs
     # all_boundary_nodes_gdf = gpd.GeoDataFrame(pd.concat(results_gdfs, ignore_index=True))
     # # parks_metric = parks_gdf.to_crs(epsg=4326)
@@ -517,7 +528,7 @@ if __name__ == "__main__":
     import os, os.path
 
 
-    iteration_no = 9
+    iteration_no = 10
 
     # move this to an external specs file
     # in hectares
@@ -648,6 +659,9 @@ if __name__ == "__main__":
     all_park_nodes = get_all_park_boundary_nodes(parks_and_forests_filtered, nodes_gdf, edges_gdf)
     all_park_nodes_gdf = gpd.GeoDataFrame(pd.concat(all_park_nodes, ignore_index=True))
 
+    # for park_nodes in all_park_nodes:
+    #     print(f"============== PARK: \n {park_nodes['name']} ---> {park_nodes['osmid_park']} \n {park_nodes}")
+
     parks_metric = parks_and_forests_filtered.to_crs(epsg=4326)
     parks_metric.plot(color='green', alpha=0.5, edgecolor='black')
 
@@ -697,6 +711,7 @@ if __name__ == "__main__":
         # print(f"routes_gdf ::: {routes_gdf.empty}")
         # exit(0)
 
+
         finished = False
         while not finished:
             # routes_part_gdf, buildings, routes_obj = get_walking_routes_to_parks(buildings, parks_and_forests_filtered, graph, routes_list)
@@ -713,7 +728,7 @@ if __name__ == "__main__":
                 buildings.to_file(outputResidentialBuildingsShp, driver="GPKG")  # Save as shapefile
                 buildings.to_file(outputResidentialBuildingsA300Shp, driver="GPKG")  # Save as shapefile
 
-            print("added routes and saved buildings")
+            print("added routes and saved buildings.")
             # finished = True
 
         # with open(routes_list, 'w') as file:

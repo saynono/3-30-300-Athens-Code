@@ -523,21 +523,23 @@ if __name__ == "__main__":
 
     # Example usage
 
-    gsvRoot = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/GSV-Data/"
+    projectRoot = "../../3-30-300-Athens-Data"
+    projectRoot = os.path.abspath(projectRoot)
+    gsvRoot = os.path.join(projectRoot,"GSV-Data")
     gsvPanoramaRoot = os.path.join(gsvRoot,"panoramas-final-new/")
     gsvDepthRoot = os.path.join(gsvRoot,"panoramas-depth-new/")
     gsvDataPrediction = os.path.join(gsvRoot,"prediction-data/")
 
-    pathMetaData         = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/metadata"
+    pathMetaData         = os.path.join(projectRoot,"maps/Kypseli-All/metadata")
     # pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/selected_pano_ids.txt"
-    pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Walks/Walk-Team-01-GSV-Points.txt"
+    pathMetaDataSelected = os.path.join(projectRoot,"maps/Walks/Walk-Team-01-GSV-Points.txt")
     # pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/selected_pano_ids_crossing.txt"
 
-    pathGSVPoints        = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/generated/Kypseli-All-GSV-Points.gpkg"
-    pathGSVPointsTemp    = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/generated/Kypseli-All-GSV-Points-TEMP.gpkg"
+    pathGSVPoints        = os.path.join(projectRoot,"maps/Kypseli-All/generated/Kypseli-All-GSV-Points.gpkg")
+    pathGSVPointsTemp    = os.path.join(projectRoot,"maps/Kypseli-All/generated/Kypseli-All-GSV-Points-TEMP.gpkg")
 
-    pathGSVTreePoints    = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/generated/Kypseli-All-GSV-Tree-Points.gpkg"
-    pathDataGenerated    = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/maps/Kypseli-All/generated/temp"
+    pathGSVTreePoints    = os.path.join(projectRoot,"maps/Kypseli-All/generated/Kypseli-All-GSV-Tree-Points.gpkg")
+    pathDataGenerated    = os.path.join(projectRoot,"maps/Kypseli-All/generated/temp")
 
 
     # metadata_df = utils.load_all_csvs(pathMetaDataSelected)
@@ -558,8 +560,10 @@ if __name__ == "__main__":
     intersections_gdf = create_intersections(metadata_df)
     pathIntersectionPoints = os.path.join(pathDataGenerated,f"__Kypseli-All-GSV-Tree-Points-CROSSING-Intersections.gpkg")
     intersections_gdf.to_file(pathIntersectionPoints, layer='locations', driver="GPKG")
+    print(f"Saved Intersections (aka Tree Locations) to {pathIntersectionPoints}")
 
 
+    # TODO : ------------------------- Probably don't need any of the following lines -----------------------------
     if True:
         exit(0)
 
@@ -619,6 +623,7 @@ if __name__ == "__main__":
 
     # print(f"{metadata_df['panoID'].to_numpy()}")
 
+    # TODO : ------------------------- Probably don't need any of the following lines -----------------------------
     if True:
         exit(0)
 
