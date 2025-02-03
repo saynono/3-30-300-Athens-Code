@@ -2,17 +2,12 @@
 import pandas as pd
 import geopandas as gpd
 import osmnx as ox
-# import osmnx.utils_geo
-from pyproj import CRS
 import matplotlib.pyplot as plt
 import networkx as nx
 from shapely.geometry import Point, LineString, Polygon, MultiPoint
 from shapely import wkt
 import utils
-import random
-import math
-import sys
-import select
+import directories
 
 
 def get_residential_buildings(shape_in):
@@ -537,43 +532,47 @@ if __name__ == "__main__":
     # in meters
     max_distance = 300
 
-    root = '../3-30-300-Athens-Data/maps/Kypseli-All/'
-    shape_file = "Kypseli-All.shp"
+    # root = '../3-30-300-Athens-Data/maps/Kypseli-All/'
+    root = directories.MAP_DIR
+    shape_file = directories.MAP_SHAPE_FILE
+
+
 
 
     root = os.path.abspath(root)
     root_generated = os.path.join(root, "generated/")
     shape_file_name = os.path.splitext(os.path.basename(shape_file))[0]
-    shape_file_boundry = shape_file_name+"-Parks-Boundry-temp.shp"
-    shape_file_park_forests = shape_file_name+"-Parks-Forests-All.gpkg"
-    shape_file_park_forests_selected = shape_file_name+"-Parks-Forests-Selected.gpkg"
+    # shape_file_boundry = shape_file_name+"-Parks-Boundry-temp.shp"
+    # shape_file_park_forests = shape_file_name+"-Parks-Forests-All.gpkg"
+    # shape_file_park_forests_selected = shape_file_name+"-Parks-Forests-Selected.gpkg"
     shape_file_routes = shape_file_name+"-Routes-A300.gpkg"
-    shape_file_residential_buildings = shape_file_name+"-Residential-Buildings.gpkg"
-    shape_file_residential_buildings_org = shape_file_name+"-Residential-Buildings-org.gpkg"
+    # shape_file_residential_buildings = shape_file_name+"-Residential-Buildings.gpkg"
+    # shape_file_residential_buildings_org = shape_file_name+"-Residential-Buildings-org.gpkg"
     shape_file_residential_buildings_A300 = shape_file_name+"-Residential-Buildings-A300.gpkg"
     routes_list = shape_file_name+"-Routes.txt"
 
-    graph_file = shape_file_name+"-Graph-Walking.graphml"
+    # graph_file = shape_file_name+"-Graph-Walking.graphml"
     # graph_file = shape_file_name+"-Graph-Walking-extended.graphml"
     # graph_file = shape_file_name+"-Graph-Walking-undirected.graphml"
     csv_file_residential_buildings = shape_file_name+"-Residential-Buildings.csv"
 
     os.makedirs(root_generated, exist_ok=True)
 
-    inputShp = os.path.join(root, shape_file)
-    outputShp = os.path.join(root_generated, shape_file_boundry)
-    outputParksForestsShp = os.path.join(root_generated, shape_file_park_forests)
-    outputParksForestsSelectedShp = os.path.join(root_generated, shape_file_park_forests_selected)
-    outputResidentialBuildingsShp = os.path.join(root_generated, shape_file_residential_buildings)
-    outputResidentialBuildingsA300Shp = os.path.join(root_generated, shape_file_residential_buildings_A300)
-    outputResidentialBuildingsOrgShp = os.path.join(root_generated, shape_file_residential_buildings_org)
+    # inputShp = os.path.join(root, shape_file)
+    # outputShp = os.path.join(root_generated, shape_file_boundry)
+    # outputParksForestsShp = os.path.join(root_generated, shape_file_park_forests)
+    # outputParksForestsSelectedShp = os.path.join(root_generated, shape_file_park_forests_selected)
+
+    # outputResidentialBuildingsShp = os.path.join(root_generated, shape_file_residential_buildings)
+    # outputResidentialBuildingsA300Shp = os.path.join(root_generated, shape_file_residential_buildings_A300)
+    # outputResidentialBuildingsOrgShp = os.path.join(root_generated, shape_file_residential_buildings_org)
 
     outputResidentialBuildingsCsv = os.path.join(root_generated, csv_file_residential_buildings)
-    outputGraphWalking = os.path.join(root_generated, graph_file)
+    # outputGraphWalking = os.path.join(root_generated, graph_file)
     outputRoutesShp = os.path.join(root_generated, shape_file_routes)
     routes_list = os.path.join(root_generated, routes_list)
 
-    gdf_in = gpd.read_file(inputShp)
+    gdf_in = gpd.read_file(directories.MAP_SHAPE_FILE)
 
 
 # print("Columns parks_and_forests_filtered",parks_and_forests_filtered.columns)
@@ -591,8 +590,8 @@ if __name__ == "__main__":
 
 
     # if( outputResidentialBuildingsShp)
-    if os.path.exists(outputResidentialBuildingsShp):
-        buildings = gpd.read_file(outputResidentialBuildingsShp)
+    if os.path.exists(directories.MAP_BUILDINGS_GENERATED):
+        buildings = gpd.read_file(directories.MAP_BUILDINGS_GENERATED)
     else:
         buildings = get_residential_buildings(gdf_in)
         buildings = buildings[~(buildings.geometry.geom_type == 'Point')]
@@ -600,17 +599,17 @@ if __name__ == "__main__":
         if 'closest_park_iteration_no' not in buildings.columns:
             buildings['closest_park_iteration_no'] = int(0)
 
-        buildings.to_file(outputResidentialBuildingsShp, driver="GPKG")  # Save as shapefile
-        buildings.to_file(outputResidentialBuildingsOrgShp, driver="GPKG")  # Save as shapefile
+        buildings.to_file(directories.MAP_BUILDINGS_GENERATED, driver="GPKG")  # Save as shapefile
+        buildings.to_file(directories.MAP_BUILDINGS_GENERATED_ORG, driver="GPKG")  # Save as shapefile
 
 
     # print(buildings)
     # # Step 6: Save the building geometries to a new shapefile or a CSV file
     # buildings[['name', 'building','addr:housenumber']].to_csv(outputResidentialBuildingsCsv, index=true)  # Save attributes to CSV
 
-    if os.path.exists(outputGraphWalking):
+    if os.path.exists(directories.GRAPH_WALKING):
         # graph = nx.read_gml(outputGraphWalking)
-        graph = ox.load_graphml(outputGraphWalking)
+        graph = ox.load_graphml(directories.GRAPH_WALKING)
         # graph = ox.save_graph_geopackage(outputGraphWalking)
         for u, v, key, data in graph.edges(data=True, keys=True):
             geom = data.get('geometry', None)  # Get the geometry object (e.g., LineString)
@@ -640,16 +639,20 @@ if __name__ == "__main__":
 
         # nx.write_gml(graph, outputGraphWalking)
         # ox.save_graph_geopackage(graph, filepath=outputGraphWalking)
-        ox.save_graphml(graph, outputGraphWalking)
+        ox.save_graphml(graph, directories.GRAPH_WALKING)
 
     # ox.plot_graph(graph)
 
+    parks_and_forests_all = utils.get_parks_and_forests(gdf_in, 0.01, max_distance)
+    parks_and_forests_all.to_file(directories.MAP_PARKS_ALL, driver="GPKG")
+
     parks_and_forests_filtered = utils.get_parks_and_forests(gdf_in, area_min_size, max_distance)
-    parks_and_forests_filtered.to_file(outputParksForestsSelectedShp, driver="GPKG")
+    parks_and_forests_filtered.to_file(directories.MAP_PARKS_SELECTED, driver="GPKG")
     # parks_and_forests_filtered['park_nodes'] = parks_and_forests_filtered.apply(lambda row: [ox.nearest_nodes(graph, point[0], point[1]) for point in row.geometry.exterior.coords], axis=1)
 
 
-
+    if True:
+        exit(0)
 
 
 

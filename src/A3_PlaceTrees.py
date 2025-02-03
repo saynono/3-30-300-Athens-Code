@@ -11,6 +11,7 @@ from pyproj import CRS
 import matplotlib.pyplot as plt
 import networkx as nx
 from scipy.constants import point
+from scipy.optimize import direct
 from shapely.geometry import Point, LineString, Polygon
 from shapely import wkt
 import utils
@@ -25,6 +26,8 @@ from sklearn.cluster import DBSCAN
 
 import A3_StitchImprove
 import osm_utils
+import directories
+
 
 def predict_something():
     model = YOLO("yolo11n.pt")
@@ -415,7 +418,7 @@ def create_intersections(metadata_df):
 
 
     gdf_gsv_points_ALL = osm_utils.create_gsv_map(metadata_df)
-    gdf_gsv_points_ALL_metric = gdf_gsv_points_ALL.to_crs("EPSG:32633")
+    # gdf_gsv_points_ALL_metric = gdf_gsv_points_ALL.to_crs("EPSG:32633")
     # gdf_gsv_points_ALL_metric = gdf_gsv_points_ALL.to_crs("EPSG:3857")
 
     # Check the CRS of your GeoDataFrame
@@ -453,6 +456,10 @@ def create_intersections(metadata_df):
         # if current_tree_buffer:
         #     current_tree_buffer = {"ID": 4, "Name": "Object D", "Value": 40}
         #     df = tree_buffer_df.append(current_tree_buffer, ignore_index=True)
+
+    # GSV - Data / panoramas - final - new / panorama_cdIv30haoh9tk92OIBV0ew.jpg
+    # GSV - Data / panoramas - final - new / panorama_ceHFMPapOIn6GhShdrl1qw.jpg
+    # GSV - Data / panoramas - final - new / panorama_ceRjZSi2maG3zrnVrGIQOg.jpg
 
 
     gdf_gsv_points_ALL_metric = gdf_gsv_points_ALL.to_crs("EPSG:3857")
@@ -523,23 +530,25 @@ if __name__ == "__main__":
 
     # Example usage
 
-    projectRoot = "../../3-30-300-Athens-Data"
-    projectRoot = os.path.abspath(projectRoot)
-    gsvRoot = os.path.join(projectRoot,"GSV-Data")
-    gsvPanoramaRoot = os.path.join(gsvRoot,"panoramas-final-new/")
-    gsvDepthRoot = os.path.join(gsvRoot,"panoramas-depth-new/")
-    gsvDataPrediction = os.path.join(gsvRoot,"prediction-data/")
 
-    pathMetaData         = os.path.join(projectRoot,"maps/Kypseli-All/metadata")
+
+    # projectRoot = "../../3-30-300-Athens-Data"
+    # projectRoot = os.path.abspath(projectRoot)
+    # gsvRoot = os.path.join(projectRoot,"GSV-Data")
+    # gsvPanoramaRoot = os.path.join(gsvRoot,"panoramas-final-new/")
+    # gsvDepthRoot = os.path.join(gsvRoot,"panoramas-depth-new/")
+    # gsvDataPrediction = os.path.join(gsvRoot,"prediction-data/")
+
+    pathMetaData         = directories.METADATA_DIR #os.path.join(projectRoot,"maps/Kypseli-All/metadata")
     # pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/selected_pano_ids.txt"
-    pathMetaDataSelected = os.path.join(projectRoot,"maps/Walks/Walk-Team-01-GSV-Points.txt")
+    # pathMetaDataSelected = os.path.join(projectRoot,"maps/Walks/Walk-Team-01-GSV-Points.txt")
     # pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/selected_pano_ids_crossing.txt"
 
-    pathGSVPoints        = os.path.join(projectRoot,"maps/Kypseli-All/generated/Kypseli-All-GSV-Points.gpkg")
-    pathGSVPointsTemp    = os.path.join(projectRoot,"maps/Kypseli-All/generated/Kypseli-All-GSV-Points-TEMP.gpkg")
+    # pathGSVPoints        = os.path.join(projectRoot,"maps/Kypseli-All/generated/Kypseli-All-GSV-Points.gpkg")
+    # pathGSVPointsTemp    = os.path.join(projectRoot,"maps/Kypseli-All/generated/Kypseli-All-GSV-Points-TEMP.gpkg")
 
-    pathGSVTreePoints    = os.path.join(projectRoot,"maps/Kypseli-All/generated/Kypseli-All-GSV-Tree-Points.gpkg")
-    pathDataGenerated    = os.path.join(projectRoot,"maps/Kypseli-All/generated/temp")
+    # pathGSVTreePoints    = os.path.join(projectRoot,"maps/Kypseli-All/generated/Kypseli-All-GSV-Tree-Points.gpkg")
+    pathDataGenerated    = directories.GENERATED_DIR #os.path.join(projectRoot,"maps/Kypseli-All/generated/temp")
 
 
     # metadata_df = utils.load_all_csvs(pathMetaDataSelected)
@@ -547,8 +556,8 @@ if __name__ == "__main__":
     # res = utils.find_entry_by_panoID(metadata_df,"0A1aUxQvyr_KqmaokVoqvQ")
     # utils.print_df_results(res)
 
-    if not os.path.exists(pathDataGenerated):
-        os.mkdir(pathDataGenerated)
+    # if not os.path.exists(pathDataGenerated):
+    #     os.mkdir(pathDataGenerated)
 
 
 
@@ -558,62 +567,63 @@ if __name__ == "__main__":
 
 
     intersections_gdf = create_intersections(metadata_df)
-    pathIntersectionPoints = os.path.join(pathDataGenerated,f"__Kypseli-All-GSV-Tree-Points-CROSSING-Intersections.gpkg")
-    intersections_gdf.to_file(pathIntersectionPoints, layer='locations', driver="GPKG")
-    print(f"Saved Intersections (aka Tree Locations) to {pathIntersectionPoints}")
+    # pathIntersectionPoints = os.path.join(pathDataGenerated,f"__Kypseli-All-GSV-Tree-Points-CROSSING-Intersections.gpkg")
+    # pathIntersectionPoints = os.path.join(pathDataGenerated,f"A3-Tree-Locations.gpkg")
+    intersections_gdf.to_file(directories.MAP_A3_TREE_LOCATIONS, layer='locations', driver="GPKG")
+    print(f"Saved Intersections (aka Tree Locations) to {directories.MAP_A3_TREE_LOCATIONS}")
 
 
     # TODO : ------------------------- Probably don't need any of the following lines -----------------------------
-    if True:
-        exit(0)
-
-
-    # load_panorama(pano_id)
+    # if True:
+    #     exit(0)
     #
-    # create_gsv_map()
-
-    # gdf_gsv_points = osm_utils.create_gsv_map(metadata_df)
-    # gdf_gsv_points = osm_utils.create_gsv_map(metadata_df)
-
-    # gdf_gsv_points.to_file(pathGSVPoints, layer='locations', driver="GPKG")
     #
-    # gdf_temp_gsv_points = temp_create_gsv_map(metadata_df)
-    # gdf_temp_gsv_points.to_file(pathGSVPointsTemp, layer='locations', driver="GPKG")
-
-    allLines = gpd.GeoDataFrame(columns=['geometry'])
-    allTrees = gpd.GeoDataFrame(columns=['geometry'])
-
-    save_single = False
-    for pano in panos:
-        pano_id = pano
-        if has_all_data(pano):
-            load_panorama(pano)
-
-            pathTreePoints = os.path.join(pathDataGenerated,f"Kypseli-All-GSV-Tree-Points-{pano}_lines.gpkg")
-            gdf_trees = osm_utils.add_trees_to_gsv_map(pano_id, selected_points, metadata_df, False)
-            if not gdf_trees.empty and save_single:
-                gdf_trees.to_file(pathTreePoints, layer='locations', driver="GPKG")
-
-            pathTreeLines = os.path.join(pathDataGenerated,f"Kypseli-All-GSV-Tree-Points-{pano}.gpkg")
-            gdf_Lines = osm_utils.add_trees_to_gsv_map(pano_id, selected_points, metadata_df, True)
-            if not gdf_Lines.empty and save_single:
-                gdf_Lines.to_file(pathTreeLines, layer='locations', driver="GPKG")
-
-            if allLines.empty:
-                allLines = gdf_Lines
-            else:
-                allLines = pd.concat([gdf_Lines,allLines], ignore_index=True)
-
-            if allTrees.empty:
-                allTrees = gdf_trees
-            else:
-                allTrees = pd.concat([gdf_trees,allTrees], ignore_index=True)
-
-    pathTreeLines = os.path.join(pathDataGenerated,f"__Kypseli-All-GSV-Tree-Points-CROSSING-Lines.gpkg")
-    allLines.to_file(pathTreeLines, layer='locations', driver="GPKG")
-
-    pathTreePoints = os.path.join(pathDataGenerated,f"__Kypseli-All-GSV-Tree-Points-CROSSING-Trees.gpkg")
-    allTrees.to_file(pathTreePoints, layer='locations', driver="GPKG")
+    # # load_panorama(pano_id)
+    # #
+    # # create_gsv_map()
+    #
+    # # gdf_gsv_points = osm_utils.create_gsv_map(metadata_df)
+    # # gdf_gsv_points = osm_utils.create_gsv_map(metadata_df)
+    #
+    # # gdf_gsv_points.to_file(pathGSVPoints, layer='locations', driver="GPKG")
+    # #
+    # # gdf_temp_gsv_points = temp_create_gsv_map(metadata_df)
+    # # gdf_temp_gsv_points.to_file(pathGSVPointsTemp, layer='locations', driver="GPKG")
+    #
+    # allLines = gpd.GeoDataFrame(columns=['geometry'])
+    # allTrees = gpd.GeoDataFrame(columns=['geometry'])
+    #
+    # save_single = False
+    # for pano in panos:
+    #     pano_id = pano
+    #     if has_all_data(pano):
+    #         load_panorama(pano)
+    #
+    #         pathTreePoints = os.path.join(pathDataGenerated,f"Kypseli-All-GSV-Tree-Points-{pano}_lines.gpkg")
+    #         gdf_trees = osm_utils.add_trees_to_gsv_map(pano_id, selected_points, metadata_df, False)
+    #         if not gdf_trees.empty and save_single:
+    #             gdf_trees.to_file(pathTreePoints, layer='locations', driver="GPKG")
+    #
+    #         pathTreeLines = os.path.join(pathDataGenerated,f"Kypseli-All-GSV-Tree-Points-{pano}.gpkg")
+    #         gdf_Lines = osm_utils.add_trees_to_gsv_map(pano_id, selected_points, metadata_df, True)
+    #         if not gdf_Lines.empty and save_single:
+    #             gdf_Lines.to_file(pathTreeLines, layer='locations', driver="GPKG")
+    #
+    #         if allLines.empty:
+    #             allLines = gdf_Lines
+    #         else:
+    #             allLines = pd.concat([gdf_Lines,allLines], ignore_index=True)
+    #
+    #         if allTrees.empty:
+    #             allTrees = gdf_trees
+    #         else:
+    #             allTrees = pd.concat([gdf_trees,allTrees], ignore_index=True)
+    #
+    # pathTreeLines = os.path.join(pathDataGenerated,f"Intersectionlines.gpkg")
+    # allLines.to_file(pathTreeLines, layer='locations', driver="GPKG")
+    #
+    # pathTreePoints = os.path.join(pathDataGenerated,f"Trees.gpkg")
+    # allTrees.to_file(pathTreePoints, layer='locations', driver="GPKG")
 
 
     # intersections = osm_utils.find_intersections(allTrees)
@@ -623,89 +633,89 @@ if __name__ == "__main__":
 
     # print(f"{metadata_df['panoID'].to_numpy()}")
 
-    # TODO : ------------------------- Probably don't need any of the following lines -----------------------------
-    if True:
-        exit(0)
-
-
-    # Create a window and set the mouse callback
-    cv2.namedWindow("Depth Image")
-    cv2.setMouseCallback("Depth Image", mouse_callback)
-
-    redraw()
-
-    while True:
-        # Display the original image
-        # display_image = depth_image.copy()
-        # display_image = cv2.cvtColor(display_image, cv2.COLOR_GRAY2RGB)
-
-        if stacked_images is not None:
-            display_image = stacked_images
-
-        # Show the image
-        cv2.imshow("Depth Image", display_image)
-
-        key = cv2.waitKey(1) & 0xFF
-        # Exit on pressing the 'q' key
-        if key == ord('q'):
-            break
-        if key == ord('s'):
-            print("Save input")
-            save_prediction(pano_id)
-        if key == ord('h'):
-            print("Help")
-            print(f"Panorama ID: {pano_id}")
-            # print(f"Panorama ID: {pano_id}")
-        if key == 8:
-            if len(selected_points) > 0:
-                selected_points.pop()
-                redraw()
-
-        if key == ord('x'):
-            print("Delete input")
-            selected_points = []
-            redraw()
-
-        if key == 81: # Left Arrow Key
-            pid = select_previous_panorama(False)
-            print(f"Selected Panorama: {pano_id}")
-            if pid is None:
-                print("done.")
-                break
-            else:
-                pano_id = pid
-                load_panorama(pano_id)
-                redraw()
-
-        if key == 83: # Right Arrow Key
-            pid = select_next_panorama(False)
-            print(f"Selected Panorama: {pano_id}")
-            if pid is None:
-                print("done.")
-                break
-            else:
-                pano_id = pid
-                load_panorama(pano_id)
-                redraw()
-
-        if key == ord(' '):
-            print("Select next panorama")
-            save_prediction(pano_id)
-            pid = select_next_panorama(True)
-            print(f"Selected Panorama: {pano_id}")
-            if pid is None:
-                print("done.")
-                break
-            else:
-                pano_id = pid
-                load_panorama(pano_id)
-                redraw()
-            # regular_image, depth_image, depth_data = load_image_set(pano_id)
-            # if len(depth_image.shape) == 3:
-            #     print("Yes, converting...")
-            #     depth_image = cv2.cvtColor(depth_image, cv2.COLOR_BGR2GRAY)
-            #
-            # selected_points = []
-
-    cv2.destroyAllWindows()
+    # # TODO : ------------------------- Probably don't need any of the following lines -----------------------------
+    # if True:
+    #     exit(0)
+    #
+    #
+    # # Create a window and set the mouse callback
+    # cv2.namedWindow("Depth Image")
+    # cv2.setMouseCallback("Depth Image", mouse_callback)
+    #
+    # redraw()
+    #
+    # while True:
+    #     # Display the original image
+    #     # display_image = depth_image.copy()
+    #     # display_image = cv2.cvtColor(display_image, cv2.COLOR_GRAY2RGB)
+    #
+    #     if stacked_images is not None:
+    #         display_image = stacked_images
+    #
+    #     # Show the image
+    #     cv2.imshow("Depth Image", display_image)
+    #
+    #     key = cv2.waitKey(1) & 0xFF
+    #     # Exit on pressing the 'q' key
+    #     if key == ord('q'):
+    #         break
+    #     if key == ord('s'):
+    #         print("Save input")
+    #         save_prediction(pano_id)
+    #     if key == ord('h'):
+    #         print("Help")
+    #         print(f"Panorama ID: {pano_id}")
+    #         # print(f"Panorama ID: {pano_id}")
+    #     if key == 8:
+    #         if len(selected_points) > 0:
+    #             selected_points.pop()
+    #             redraw()
+    #
+    #     if key == ord('x'):
+    #         print("Delete input")
+    #         selected_points = []
+    #         redraw()
+    #
+    #     if key == 81: # Left Arrow Key
+    #         pid = select_previous_panorama(False)
+    #         print(f"Selected Panorama: {pano_id}")
+    #         if pid is None:
+    #             print("done.")
+    #             break
+    #         else:
+    #             pano_id = pid
+    #             load_panorama(pano_id)
+    #             redraw()
+    #
+    #     if key == 83: # Right Arrow Key
+    #         pid = select_next_panorama(False)
+    #         print(f"Selected Panorama: {pano_id}")
+    #         if pid is None:
+    #             print("done.")
+    #             break
+    #         else:
+    #             pano_id = pid
+    #             load_panorama(pano_id)
+    #             redraw()
+    #
+    #     if key == ord(' '):
+    #         print("Select next panorama")
+    #         save_prediction(pano_id)
+    #         pid = select_next_panorama(True)
+    #         print(f"Selected Panorama: {pano_id}")
+    #         if pid is None:
+    #             print("done.")
+    #             break
+    #         else:
+    #             pano_id = pid
+    #             load_panorama(pano_id)
+    #             redraw()
+    #         # regular_image, depth_image, depth_data = load_image_set(pano_id)
+    #         # if len(depth_image.shape) == 3:
+    #         #     print("Yes, converting...")
+    #         #     depth_image = cv2.cvtColor(depth_image, cv2.COLOR_BGR2GRAY)
+    #         #
+    #         # selected_points = []
+    #
+    # cv2.destroyAllWindows()
 
