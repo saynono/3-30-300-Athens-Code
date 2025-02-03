@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     root = '../../3-30-300-Athens-Data/gsv-tree-recognition'
     root = os.path.abspath(root)
-    xml_file = os.path.join(root, "annotations-02.xml")
+    xml_file = os.path.join(root, "annotations-cvat-athens-330300-250203.xml")
 
     xml_file = os.path.abspath(xml_file)
     print(xml_file)
