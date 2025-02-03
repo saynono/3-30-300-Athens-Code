@@ -1,23 +1,13 @@
-
-
-import matplotlib.pyplot as plt
-
-import geopandas as gpd
-import osmnx as ox
-# import osmnx.utils_geo
-from pyproj import CRS
-import matplotlib.pyplot as plt
-import networkx as nx
-from shapely.geometry import Point, LineString, Polygon
-from shapely import wkt
 import utils
-import random
-import math
-import A3_StitchImprove
 import cv2
 import threading
 from queue import Queue
 import time
+
+import directories
+import A3_StitchImprove
+import A3_create_GSV_points
+import A3_collect_streetview_metadata
 
 # A thread-safe queue to store the most recent processed image
 image_queue = Queue(maxsize=1)
@@ -84,6 +74,42 @@ def create_all_panoramas(metadata_df):
     exit(0)
 
 
+def create_gsv_street_points():
+
+    import os,os.path
+
+    # root = '/Users/nono/Documents/workspaces/GIS/3-30-300-Athens-data/maps/Kypseli-All/'
+
+    root_map = directories.MAP_DIR
+
+    in_shape = directories.MAP_SHAPE_FILE
+    outshpStreetNetwork = os.path.join(root_map,'Kypseli-Center-Streets')
+    outshpPoints = os.path.join(root_map,'Kypseli-Center-Streets-10m.shp')
+    mini_dist = 10 #the minimum distance between two generated points in meter
+    A3_create_GSV_points.save_street_network(in_shape, outshpStreetNetwork)
+    shpStreetNetwork = os.path.join(root_map,'Kypseli-Center-Streets/edges.shp')
+    A3_create_GSV_points.create_points(shpStreetNetwork, outshpPoints, mini_dist)
+
+def collect_streetview_metadata():
+    # root = './spatial-data/Kypseli-All/'
+    # root = '/Users/nono/Documents/workspaces/GIS/3-30-300-Athens-data/maps/Kypseli-All/'
+    root_map = directories.MAP_DIR
+    # inputShp = os.path.join(root, 'Kypseli-All.shp')
+    inputShp = os.path.join(root_map, 'Kypseli-Center-Streets-10m.shp')
+
+    key_file = './keys.txt'
+    keylist = utils.get_keys(key_file)
+    api_key = keylist[0]
+
+    # api_key = os.environ["GOOGLE_MAPS_API_KEY"]
+
+
+    # inputShp = '/Users/nono/Documents/workspaces/GIS/3-30-300-Athens/maps/Kypseli-All/Kypseli-All-Outlines.shp'
+    outputTxt = os.path.join(root, 'metadata/')
+
+    A3_collect_streetview_metadata.GSVpanoMetadataCollector(inputShp,1000, api_key, outputTxt)
+
+
 
 if __name__ == "__main__":
 
@@ -102,23 +128,29 @@ if __name__ == "__main__":
     #
     # pathMetaData         = os.path.join(pathRoot,"maps/Kypseli-All/metadata")
 
-    root = os.path.abspath('../../3-30-300-Athens-Data/')
+    root = directories.DATA_DIR
+    print("ROOT: ", root)
 
     GSVCache = os.path.join(root, './GSV-Data/panodata-cache')
     GSVPanoramaFolder = os.path.join(root, './GSV-Data/panoramas-final-new')
-    GSVMetadata = os.path.join(root, 'maps/Kypseli-All/metadata/')
+    # GSVMetadata = os.path.join(root, 'maps/Kypseli-All/metadata/')
     GSVMetadata = os.path.join(root, 'selected_pano_ids.txt')
-    # pathMetaDataSelected = "/home/nono/Documents/workspaces/GIS/3-30-300-Athens-Data/selected_pano_ids.txt"
+    # GSVMetadata = directories.GSV_DIR_METADATA
+
+    if not os.path.exists(directories.MAP_SHAPE_FILE):
+        print(f"MAP Shape file not found {directories.MAP_SHAPE_FILE} ")
+        exit(0)
 
     if not os.path.exists(GSVCache):
         os.makedirs(GSVCache)
     if not os.path.exists(GSVPanoramaFolder):
         os.makedirs(GSVPanoramaFolder)
 
+    # create_gsv_street_points()
+
+    collect_streetview_metadata()
 
     metadata_df = utils.load_all_csvs(GSVMetadata)
-
-    # create_all_panoramas(metadata_df)
 
     processing_thread = threading.Thread(target=create_all_panoramas, args=(metadata_df,))
     processing_thread.start()

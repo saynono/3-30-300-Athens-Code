@@ -58,7 +58,11 @@ pip install -r requirements.txt
   ```bash
   /home/username/virtualpy/bin/python setup.py install
   ```
-
+6. Fix an import in basicsr/data/degradations.py
+Change import of rgb_to_greyscale by adding an '_' in front of functional_tensor
+```bash
+from torchvision.transforms._functional_tensor import rgb_to_grayscale
+```
 ### More Work To DO
 - For the [Google Street View API](https://developers.google.com/maps/documentation/streetview/metadata), I am currently using an API Key but not a digital signature. Let's set one up.
 

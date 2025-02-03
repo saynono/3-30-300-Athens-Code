@@ -1,15 +1,8 @@
-# import warnings
-# warnings.simplefilter(action='ignore', category=FutureWarning)
-# with warnings.catch_warnings():
-#     warnings.simplefilter(action='ignore', category=FutureWarning)
-
 import requests
 from OSMPythonTools.nominatim import Nominatim
 from shapely.geometry import Point, LineString, Polygon, MultiPolygon
 from shapely.ops import unary_union
 import osmnx as ox
-# import osmnx.utils_graph
-import osmnx.routing
 import networkx as nx
 from pyproj import CRS
 import geopandas as gpd
